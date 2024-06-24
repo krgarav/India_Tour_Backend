@@ -12,7 +12,7 @@ exports.login = async (req, res) => {
     const user = await User.findOne({ where: { email: email } });
 
     if (!user) {
-      return res.status(400).json({ error: "Invalid Username" });
+      return res.status(400).json({ error: "Invalid Email" });
     }
 
     // Compare the provided password with the hashed password
@@ -20,7 +20,7 @@ exports.login = async (req, res) => {
 
     const token = jwt.sign(
       {
-        email: user.email,
+        id: user.id,
       },
       "secretKey"
     );
@@ -55,8 +55,12 @@ exports.changePasswordAndEmail = async (req, res) => {
       const hashPassword = await bcrypt.hash(updatePassword, 12);
       user.password = hashPassword;
     }
+
+    // Save the updated user to the database
+    await user.save();
+
     // Generate a new token (optional) - Example assuming you want to send a new token after changes
-    const token = jwt.sign({ id: user.id }, secretKey, { expiresIn: "1h" });
+    const token = jwt.sign({ id: user.id }, "secretKey");
 
     // Response with success message and token
     res
