@@ -12,14 +12,13 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 //routes
 app.use(require("./routes/authRoutes"));
-
+app.use(require("./routes/tourRoutes"));
 
 sequelize
   .sync({ force: false })
   .then(async () => {
     const users = await User.findAll();
     if (users.length === 0) {
-
       const hashPassword = await bcrypt.hash("admin", 12);
       await User.create({
         email: "admin@gmail.com",
