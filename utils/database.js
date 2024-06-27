@@ -19,4 +19,6 @@ const sequelize = new Sequelize("triangleindia_tour", "root", "root", {
   logging: false,
 });
 
+
+
 module.exports = sequelize;
