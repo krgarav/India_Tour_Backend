@@ -10,6 +10,7 @@ const cors = require("cors");
 // Middleware to parse JSON bodies
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+
 //Cors Error resolved
 app.use(cors())
 //routes
