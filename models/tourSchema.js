@@ -1,7 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../utils/database");
 
-const Tour = sequelize.define('Tour', {
+const Tour = sequelize.define("Tour", {
   tourTitle: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -14,15 +14,16 @@ const Tour = sequelize.define('Tour', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  tourImages: {
-    type: DataTypes.JSON,
-    allowNull: true, // Can be null if no additional images are uploaded
-  },
+
   tourPrice: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  tourDuration: {
+  tourDurationDay: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  tourDurationNight: {
     type: DataTypes.STRING,
     allowNull: false,
   },
@@ -49,5 +50,6 @@ const Tour = sequelize.define('Tour', {
     },
   },
 });
+
 
 module.exports = Tour;

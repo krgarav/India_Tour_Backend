@@ -1,9 +1,11 @@
 const Tour = require("../models/tourSchema");
+const TourData = require("../models/metaDataTourSchema");
+const SubImages = require("../models/subImagesSchema");
 const upload = require("../middleware/imageUploads"); // Adjust the path as needed
 const fs = require("fs");
 const path = require("path");
 
-// CREATE TOUR
+//CREATE TOUR
 exports.createTour = (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
@@ -13,11 +15,28 @@ exports.createTour = (req, res) => {
       });
     }
 
-    const { title, desc, price, duration, location, deals, rating, stars } =
-      req.body;
+    const {
+      title,
+      miniDesc,
+      price,
+      durationDay,
+      durationNight,
+      location,
+      deals,
+      rating,
+      stars,
+      longDesc,
+      luxuryHotel,
+      wifi,
+      transport,
+      fooding,
+      others,
+    } = req.body;
+
     const tourTitleImage = req.files["TitleImage"]
       ? req.files["TitleImage"][0].filename
       : null;
+
     const tourImages = req.files["SubImages"]
       ? req.files["SubImages"].map((file) => file.filename)
       : [];
@@ -25,15 +44,35 @@ exports.createTour = (req, res) => {
     try {
       const newTour = await Tour.create({
         tourTitle: title,
-        miniTourDesc: desc,
+        miniTourDesc: miniDesc,
         tourTitleImage: tourTitleImage,
-        tourImages: tourImages,
         tourPrice: price,
-        tourDuration: duration,
+        tourDurationDay: durationDay,
+        tourDurationNight: durationNight,
         tourLocation: location,
         topDeals: deals,
         rating: rating,
         stars: stars,
+      });
+
+      // Create SubImages entries and associate them with the new Tour
+      if (tourImages.length > 0) {
+        const subImagesData = tourImages.map((filename) => ({
+          filename: filename,
+          tourId: newTour.id,
+        }));
+        await SubImages.bulkCreate(subImagesData);
+      }
+
+      // Create TourData entry and associate it with the new Tour
+      await TourData.create({
+        fullDescription: longDesc,
+        luxuryHotel: luxuryHotel,
+        wifi: wifi,
+        transport: transport,
+        fooding: fooding,
+        others: others,
+        tourId: newTour.id,
       });
 
       res.status(201).json({
@@ -48,33 +87,6 @@ exports.createTour = (req, res) => {
       });
     }
   });
-};
-
-// GET TOUR BY ID
-exports.getTourById = async (req, res) => {
-  const tourId = req.params.id;
-
-  try {
-    const tour = await Tour.findOne({ where: { id: tourId } });
-
-    if (!tour) {
-      return res.status(404).json({
-        success: false,
-        message: "Tour not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: tour,
-    });
-  } catch (error) {
-    console.error("Error fetching tour:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error. Please try again later.",
-    });
-  }
 };
 
 //EDIT TOUR
@@ -163,6 +175,33 @@ exports.editTour = async (req, res) => {
     });
   } catch (error) {
     console.error("Error editing tour:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error. Please try again later.",
+    });
+  }
+};
+
+// GET TOUR BY ID
+exports.getTourById = async (req, res) => {
+  const tourId = req.params.id;
+
+  try {
+    const tour = await Tour.findOne({ where: { id: tourId } });
+
+    if (!tour) {
+      return res.status(404).json({
+        success: false,
+        message: "Tour not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: tour,
+    });
+  } catch (error) {
+    console.error("Error fetching tour:", error);
     res.status(500).json({
       success: false,
       message: "Server error. Please try again later.",
