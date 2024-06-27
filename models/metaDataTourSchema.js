@@ -1,13 +1,34 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../utils/database");
+const Tour = require("./tourSchema");
 
 const TourData = sequelize.define("TourData", {
   fullDescription: {
     type: DataTypes.TEXT,
   },
-  amenities: {
-    type: DataTypes.JSON,
+  luxuryHotel: {
+    type: DataTypes.BOOLEAN,
   },
+  wifi: {
+    type: DataTypes.BOOLEAN,
+  },
+  transport: {
+    type: DataTypes.BOOLEAN,
+  },
+  fooding: {
+    type: DataTypes.BOOLEAN,
+  },
+  others: {
+    type: DataTypes.STRING,
+  },
+});
+
+Tour.hasOne(TourData, {
+  foreignKey: "tourId",
+  onDelete: "CASCADE",
+});
+TourData.belongsTo(Tour, {
+  foreignKey: "tourId",
 });
 
 module.exports = TourData;
