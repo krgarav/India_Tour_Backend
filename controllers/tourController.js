@@ -1,8 +1,9 @@
-const { Sequelize } = require("sequelize"); // Ensure Sequelize is imported
+const sequelize = require("../utils/database");
 const Tour = require("../models/tourSchema");
 const TourData = require("../models/metaDataTourSchema");
 const SubImages = require("../models/subImagesSchema");
-const { upload } = require("../middleware/imageUploads"); // Adjust the path to your upload middleware
+const ItneryTour = require("../models/itneryTourSchema");
+const upload = require("../middleware/imageUploads"); // Adjust the path to your upload middleware
 const fs = require("fs");
 const path = require("path");
 
@@ -85,9 +86,10 @@ const handleSubImagesUpload = async (
 //EDIT TOUR
 exports.editTour = async (req, res) => {
   const tourId = req.params.id;
-  const transaction = await Sequelize.transaction();
+  let transaction;
 
   try {
+    transaction = await sequelize.transaction();
     let tour = await Tour.findByPk(tourId, {
       include: [{ model: SubImages }, { model: TourData }],
       transaction,
@@ -116,9 +118,18 @@ exports.editTour = async (req, res) => {
       }
 
       try {
+        // Update tour fields
         await updateTourFields(req, tour);
+        // Update tour data fields
         await updateTourDataFields(req, tour);
-        await handleTourTitleImageUpload(req, tour, previousTourTitleImage);
+        // Handle title image upload
+        await handleTourTitleImageUpload(
+          req,
+          tour,
+          previousTourTitleImage,
+          transaction
+        );
+        // Handle sub-images upload
         await handleSubImagesUpload(req, tour, previousSubImages, transaction);
 
         await tour.save({ transaction });
@@ -142,7 +153,7 @@ exports.editTour = async (req, res) => {
       }
     });
   } catch (error) {
-    await transaction.rollback();
+    if (transaction) await transaction.rollback();
     console.error("Error editing tour:", error);
     res.status(500).json({
       success: false,
@@ -153,7 +164,6 @@ exports.editTour = async (req, res) => {
 
 //CREATE TOUR
 exports.createTour = (req, res) => {
-
   upload(req, res, async (err) => {
     if (err) {
       return res.status(400).json({
@@ -178,14 +188,19 @@ exports.createTour = (req, res) => {
       transport,
       fooding,
       others,
+      itneryTourDetails,
     } = req.body;
 
     const tourTitleImage = req.files?.TitleImage?.[0]?.filename || null;
     const tourImages = req.files?.SubImages?.map((file) => file.filename) || [];
 
-    const transaction = await Sequelize.transaction(); // Begin transaction
+    let transaction;
 
     try {
+      // Start a transaction
+      transaction = await sequelize.transaction();
+
+      // Create the new tour
       const newTour = await Tour.create(
         {
           tourTitle: title,
@@ -199,7 +214,7 @@ exports.createTour = (req, res) => {
           rating: rating,
           stars: stars,
         },
-        { transaction } // Pass the transaction to each operation
+        { transaction }
       );
 
       // Create SubImages entries and associate them with the new Tour
@@ -225,14 +240,45 @@ exports.createTour = (req, res) => {
         { transaction }
       );
 
-      await transaction.commit(); // Commit the transaction
+      // let parsedItneryTourDetails = JSON.parse(itneryTourDetails);
+
+      // if (
+      //   Array.isArray(parsedItneryTourDetails) &&
+      //   parsedItneryTourDetails.length > 0
+      // ) {
+      //   // Map the parsed itneryTourDetails to match the ItneryTour model fields
+      //   const itneryTourDetailsCreate = parsedItneryTourDetails.map(
+      //     (itinerary) => ({
+      //       title: itinerary.title,
+      //       desc: itinerary.desc,
+      //       day: itinerary.day,
+      //       tourId: newTour.id, // Assuming newTour.id is set correctly
+      //     }),
+      //     { transaction }
+      //   );
+      //   try {
+      //     // Bulk create the ItneryTour entries
+      //     await ItneryTour.bulkCreate(itneryTourDetailsCreate);
+      //     console.log("ItneryTour entries created successfully.");
+      //   } catch (error) {
+      //     console.error("Error creating ItneryTour entries:", error);
+      //     // Handle the error appropriately
+      //   }
+      // } else {
+      //   console.error("Invalid or empty itneryTourDetails array.");
+      //   // Handle case where itneryTourDetails is not in expected format or is empty
+      // }
+
+      // Commit the transaction
+      await transaction.commit();
 
       res.status(201).json({
         success: true,
         data: newTour,
       });
     } catch (error) {
-      await transaction.rollback(); // Rollback the transaction on error
+      // Rollback the transaction in case of error
+      if (transaction) await transaction.rollback();
       console.error("Error creating tour:", error);
       res.status(500).json({
         success: false,
@@ -274,9 +320,7 @@ exports.getTourById = async (req, res) => {
 //GET ALL TOURS
 exports.getAllTour = async (req, res) => {
   try {
-    let tours = await Tour.findAll({
-      include: [{ model: SubImages }],
-    });
+    let tours = await Tour.findAll({});
 
     res.status(200).json({
       success: true,

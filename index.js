@@ -1,12 +1,13 @@
 const express = require("express");
 const app = express();
-const path = require('path');
+const path = require("path");
 const sequelize = require("./utils/database");
 const PORT = 5000;
 const User = require("./models/authSchema");
 const Tour = require("./models/tourSchema");
 const SubImages = require("./models/subImagesSchema");
 const TourData = require("./models/metaDataTourSchema");
+const ItneryTour = require("./models/itneryTourSchema");
 const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -39,6 +40,16 @@ Tour.hasOne(TourData, {
   onUpdate: "CASCADE",
 });
 TourData.belongsTo(Tour, {
+  foreignKey: "tourId",
+  onUpdate: "CASCADE",
+});
+
+Tour.hasOne(ItneryTour, {
+  foreignKey: "tourId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ItneryTour.belongsTo(Tour, {
   foreignKey: "tourId",
   onUpdate: "CASCADE",
 });
