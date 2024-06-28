@@ -26,9 +26,11 @@ const TourData = sequelize.define("TourData", {
 Tour.hasOne(TourData, {
   foreignKey: "tourId",
   onDelete: "CASCADE",
+  onUpdate: "CASCADE",
 });
 TourData.belongsTo(Tour, {
   foreignKey: "tourId",
+  onUpdate: "CASCADE",
 });
 
 module.exports = TourData;

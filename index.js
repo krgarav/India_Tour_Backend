@@ -29,13 +29,14 @@ Tour.hasMany(SubImages, {
 SubImages.belongsTo(Tour, {
   foreignKey: "tourId",
 });
-
 Tour.hasOne(TourData, {
   foreignKey: "tourId",
   onDelete: "CASCADE",
+  onUpdate: "CASCADE",
 });
 TourData.belongsTo(Tour, {
   foreignKey: "tourId",
+  onUpdate: "CASCADE",
 });
 
 sequelize
