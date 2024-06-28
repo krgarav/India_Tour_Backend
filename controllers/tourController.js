@@ -153,6 +153,7 @@ exports.editTour = async (req, res) => {
 
 //CREATE TOUR
 exports.createTour = (req, res) => {
+
   upload(req, res, async (err) => {
     if (err) {
       return res.status(400).json({
