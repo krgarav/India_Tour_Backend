@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+const path = require('path');
 const sequelize = require("./utils/database");
 const PORT = 5000;
 const User = require("./models/authSchema");
@@ -20,6 +21,9 @@ app.use(cors());
 //Routes
 app.use(require("./routes/authRoutes"));
 app.use(require("./routes/tourRoutes"));
+
+// Serve static files from the 'extractedFiles' directory
+app.use("/images", express.static(path.join(__dirname, "/uploads/images/")));
 
 // Table Relations
 Tour.hasMany(SubImages, {
