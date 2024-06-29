@@ -11,7 +11,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 
 const app = express();
-const PORT = 443; // HTTPS usually runs on port 443
+const PORT = 5000; // HTTPS usually runs on port 443
 
 // Middleware to parse JSON bodies
 app.use(express.json());
