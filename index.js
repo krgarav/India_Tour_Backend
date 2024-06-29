@@ -1,12 +1,18 @@
 const express = require("express");
+
+const app = express();
+const path = require("path");
+
 const https = require("https");
 const http = require("http");
 const fs = require("fs");
+
 const sequelize = require("./utils/database");
 const User = require("./models/authSchema");
 const Tour = require("./models/tourSchema");
 const SubImages = require("./models/subImagesSchema");
 const TourData = require("./models/metaDataTourSchema");
+const ItneryTour = require("./models/itneryTourSchema");
 const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -25,6 +31,9 @@ app.use(cors());
 app.use(require("./routes/authRoutes"));
 app.use(require("./routes/tourRoutes"));
 
+// Serve static files from the 'extractedFiles' directory
+app.use("/images", express.static(path.join(__dirname, "/uploads/images/")));
+
 // Table Relations
 Tour.hasMany(SubImages, {
   foreignKey: "tourId",
@@ -33,13 +42,24 @@ Tour.hasMany(SubImages, {
 SubImages.belongsTo(Tour, {
   foreignKey: "tourId",
 });
-
 Tour.hasOne(TourData, {
   foreignKey: "tourId",
   onDelete: "CASCADE",
+  onUpdate: "CASCADE",
 });
 TourData.belongsTo(Tour, {
   foreignKey: "tourId",
+  onUpdate: "CASCADE",
+});
+
+Tour.hasOne(ItneryTour, {
+  foreignKey: "tourId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ItneryTour.belongsTo(Tour, {
+  foreignKey: "tourId",
+  onUpdate: "CASCADE",
 });
 
 sequelize

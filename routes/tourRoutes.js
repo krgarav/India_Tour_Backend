@@ -10,9 +10,10 @@ const {
 } = require("../controllers/tourController");
 
 router.post("/createtour", createTour);
-// router.get("/tour/:id", getTourById);
-// router.get("/tours", getAllTour);
-// router.put("/tour/edit/:id", editTour);
-// router.delete("/tour/delete/:id", deleteTour);
+router.get("/tour/:id", getTourById); //tourId
+router.get("/tours", getAllTour);
+router.put("/tour/edit/:id", editTour); //tourId
+router.delete("/tour/delete/:id", deleteTour); //tourId
+
 
 module.exports = router;
