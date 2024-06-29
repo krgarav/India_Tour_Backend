@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
     // Generate unique filename with timestamp
     const timestamp = Date.now();
     let filenamePrefix = '';
-console.log(file)
+
     if (file.fieldname === 'TitleImage') {
       filenamePrefix = 'Title-Image';
     } else if (file.fieldname === 'SubImages') {
