@@ -1,32 +1,56 @@
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+const { v4: uuidv4 } = require("uuid");
 
 // Create the uploads/images directory if it doesn't exist
-const uploadDir = './uploads/images';
+const uploadDir = "./uploads/images";
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 // Set storage engine
+// const storage = multer.diskStorage({
+//   destination: uploadDir,
+//   filename: (req, file, cb) => {
+//     // Generate unique filename with timestamp
+//     const timestamp = Date.now();
+//     let filenamePrefix = '';
+//     if (file.fieldname === 'TitleImage') {
+//       filenamePrefix = 'Title-Image';
+//     } else if (file.fieldname === 'SubImages') {
+//       filenamePrefix = 'Sub-Images';
+//     } else {
+//       filenamePrefix = 'File';
+//     }
+
+//     // Ensure extension is retained
+//     const extname = path.extname(file.originalname);
+//     cb(null, `${filenamePrefix}-${timestamp}${extname}`);
+//   },
+// });
+
+// Set storage engine
 const storage = multer.diskStorage({
   destination: uploadDir,
   filename: (req, file, cb) => {
-    // Generate unique filename with timestamp
-    const timestamp = Date.now();
-    let filenamePrefix = '';
 
-    if (file.fieldname === 'TitleImage') {
-      filenamePrefix = 'Title-Image';
-    } else if (file.fieldname === 'SubImages') {
-      filenamePrefix = 'Sub-Images';
+    // Generate unique filename with UUID
+    const uniqueId = uuidv4();
+    let filenamePrefix = "";
+    if (file.fieldname === "TitleImage") {
+      filenamePrefix = "Title-Image";
+    } else if (file.fieldname === "SubImages") {
+      filenamePrefix = "Sub-Images";
+
+
     } else {
-      filenamePrefix = 'File';
+      filenamePrefix = "File";
     }
 
     // Ensure extension is retained
     const extname = path.extname(file.originalname);
-    cb(null, `${filenamePrefix}-${timestamp}${extname}`);
+    cb(null, `${filenamePrefix}-${uniqueId}${extname}`);
   },
 });
 
@@ -39,7 +63,7 @@ function checkFileType(file, cb) {
   if (extname && mimetype) {
     return cb(null, true);
   } else {
-    cb('Error: Images Only!');
+    cb("Error: Images Only!");
   }
 }
 
@@ -51,8 +75,8 @@ const upload = multer({
     checkFileType(file, cb);
   },
 }).fields([
-  { name: 'TitleImage', maxCount: 1 },
-  { name: 'SubImages', maxCount: 10 }
+  { name: "TitleImage", maxCount: 1 },
+  { name: "SubImages", maxCount: 10 },
 ]);
 
 module.exports = upload;
