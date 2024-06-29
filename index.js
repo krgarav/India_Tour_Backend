@@ -11,7 +11,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 
 const app = express();
-const PORT = 5000;
+const PORT = 443; // HTTPS usually runs on port 443
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -55,8 +55,8 @@ sequelize
 
     // Read SSL certificate and key files
     const options = {
-      key: fs.readFileSync("/path/to/your/private.key"), // Replace with your private key file path
-      cert: fs.readFileSync("/path/to/your/certificate.crt") // Replace with your certificate file path
+      key: fs.readFileSync("/etc/letsencrypt/live/testtour.uk.to/privkey.pem"), // Replace with your private key file path
+      cert: fs.readFileSync("/etc/letsencrypt/live/testtour.uk.to/fullchain.pem") // Replace with your fullchain.pem file path
     };
 
     https.createServer(options, app).listen(PORT, () => {
