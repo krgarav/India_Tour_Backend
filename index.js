@@ -5,7 +5,7 @@ const path = require("path");
 
 const https = require("https");
 const fs = require("fs");
-
+const http = require("http");
 const sequelize = require("./utils/database");
 const User = require("./models/authSchema");
 const Tour = require("./models/tourSchema");
@@ -15,8 +15,8 @@ const ItneryTour = require("./models/itneryTourSchema");
 const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const TourPackage = require("./models/tourPackageSchema");
 
-const app = express();
 const PORT = 5000; // HTTPS usually runs on port 443
 
 // Middleware to parse JSON bodies
@@ -61,6 +61,17 @@ ItneryTour.belongsTo(Tour, {
   onUpdate: "CASCADE",
 });
 
+TourPackage.hasMany(Tour, {
+  foreignKey: "tourId",
+  onDelete: "CASCADE",
+  onUpdate:"CASCADE"
+});
+
+Tour.belongsTo(TourPackage, {
+  foreignKey: "tourId",
+  onUpdate:"CASCADE"
+});
+
 sequelize
   .sync({ force: false })
   .then(async () => {
@@ -73,13 +84,13 @@ sequelize
       });
     }
 
-    // Read SSL certificate and key files
-    const options = {
-      key: fs.readFileSync("/etc/letsencrypt/live/testtour.uk.to/privkey.pem"), // Replace with your private key file path
-      cert: fs.readFileSync("/etc/letsencrypt/live/testtour.uk.to/fullchain.pem") // Replace with your fullchain.pem file path
-    };
+    // // Read SSL certificate and key files
+    // const options = {
+    //   key: fs.readFileSync("/etc/letsencrypt/live/testtour.uk.to/privkey.pem"), // Replace with your private key file path
+    //   cert: fs.readFileSync("/etc/letsencrypt/live/testtour.uk.to/fullchain.pem") // Replace with your fullchain.pem file path
+    // };
 
-    https.createServer(options, app).listen(PORT, () => {
+    http.createServer(app).listen(PORT, () => {
       console.log(`HTTPS Server is running on port ${PORT}`);
     });
   })
