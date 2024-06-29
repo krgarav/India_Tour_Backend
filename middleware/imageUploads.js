@@ -34,6 +34,7 @@ if (!fs.existsSync(uploadDir)) {
 const storage = multer.diskStorage({
   destination: uploadDir,
   filename: (req, file, cb) => {
+
     // Generate unique filename with UUID
     const uniqueId = uuidv4();
     let filenamePrefix = "";
@@ -41,6 +42,8 @@ const storage = multer.diskStorage({
       filenamePrefix = "Title-Image";
     } else if (file.fieldname === "SubImages") {
       filenamePrefix = "Sub-Images";
+
+
     } else {
       filenamePrefix = "File";
     }

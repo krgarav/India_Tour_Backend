@@ -1,8 +1,12 @@
 const express = require("express");
+
 const app = express();
 const path = require("path");
+
+const https = require("https");
+const fs = require("fs");
+
 const sequelize = require("./utils/database");
-const PORT = 5000;
 const User = require("./models/authSchema");
 const Tour = require("./models/tourSchema");
 const SubImages = require("./models/subImagesSchema");
@@ -12,14 +16,17 @@ const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 
-//Middleware to parse JSON bodies
+const app = express();
+const PORT = 5000; // HTTPS usually runs on port 443
+
+// Middleware to parse JSON bodies
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-//Cors Error resolved
+// CORS error resolved
 app.use(cors());
 
-//Routes
+// Routes
 app.use(require("./routes/authRoutes"));
 app.use(require("./routes/tourRoutes"));
 
@@ -66,8 +73,14 @@ sequelize
       });
     }
 
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+    // Read SSL certificate and key files
+    const options = {
+      key: fs.readFileSync("/etc/letsencrypt/live/testtour.uk.to/privkey.pem"), // Replace with your private key file path
+      cert: fs.readFileSync("/etc/letsencrypt/live/testtour.uk.to/fullchain.pem") // Replace with your fullchain.pem file path
+    };
+
+    https.createServer(options, app).listen(PORT, () => {
+      console.log(`HTTPS Server is running on port ${PORT}`);
     });
   })
   .catch((err) => {
