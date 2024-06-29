@@ -32,14 +32,59 @@ const updateTourDataFields = async (req, tour) => {
   }
 };
 
+const updateItneryTour = async (req, itneryTourData, transaction) => {
+  if (req.body.itneryTourDetails) {
+    let parsedItneryTourDetails;
+    try {
+      parsedItneryTourDetails = JSON.parse(req.body.itneryTourDetails);
+    } catch (error) {
+      console.error("Error parsing JSON:", error);
+      throw new Error("Invalid JSON format for itneryTourDetails.");
+    }
+
+    if (
+      Array.isArray(parsedItneryTourDetails) &&
+      parsedItneryTourDetails.length > 0
+    ) {
+      try {
+        // Iterate over each itinerary and perform the update
+        for (let i = 0; i < parsedItneryTourDetails.length; i++) {
+          const itinerary = parsedItneryTourDetails[i];
+
+          // Update the corresponding tour object
+          if (itneryTourData[i]) {
+            itneryTourData[i].title = itinerary.title;
+            itneryTourData[i].desc = itinerary.desc;
+            itneryTourData[i].day = itinerary.day;
+
+            // Save the updated tour object to database
+            await itneryTourData[i].save({ transaction });
+          } else {
+            console.error(
+              `No corresponding ItneryTour found for itinerary index ${i}. Skipping update.`
+            );
+          }
+        }
+
+        console.log("ItneryTour entries updated successfully.");
+      } catch (error) {
+        console.error("Error updating ItneryTour entries:", error);
+        throw new Error("Error updating ItneryTour entries.");
+      }
+    } else {
+      console.error("Invalid or empty itneryTourDetails array.");
+      throw new Error("Invalid or empty itneryTourDetails array.");
+    }
+  }
+};
+
 const handleTourTitleImageUpload = async (
   req,
   tour,
-  previousTourTitleImage
+  previousTourTitleImage,
+  transaction
 ) => {
   if (req.files && req.files["TitleImage"]) {
-    tour.tourTitleImage = req.files["TitleImage"][0].filename;
-
     if (previousTourTitleImage) {
       const imagePath = path.join(
         __dirname,
@@ -48,8 +93,13 @@ const handleTourTitleImageUpload = async (
         "images",
         previousTourTitleImage
       );
-      fs.unlinkSync(imagePath);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath); // Delete additional tour images files from server
+      }
     }
+    // Update tourTitleImage and save within transaction
+    tour.tourTitleImage = req.files["TitleImage"][0].filename;
+    await tour.save({ transaction });
   }
 };
 
@@ -65,20 +115,30 @@ const handleSubImagesUpload = async (
       tourId: tour.id,
     }));
 
-    await SubImages.destroy({ where: { tourId: tour.id }, transaction });
-    await SubImages.bulkCreate(newSubImages, { transaction });
+    try {
+      // Delete previous sub-images from the database
+      await SubImages.destroy({ where: { tourId: tour.id }, transaction });
+      // Create new sub-images in the database
+      await SubImages.bulkCreate(newSubImages, { transaction });
 
-    if (previousSubImages.length > 0) {
-      previousSubImages.forEach((image) => {
-        const imagePath = path.join(
-          __dirname,
-          "..",
-          "uploads",
-          "images",
-          image
-        );
-        fs.unlinkSync(imagePath);
-      });
+      // Delete previous sub-image files from the filesystem
+      if (previousSubImages.length > 0) {
+        for (const image of previousSubImages) {
+          const imagePath = path.join(
+            __dirname,
+            "..",
+            "uploads",
+            "images",
+            image
+          );
+          if (fs.existsSync(imagePath)) {
+            fs.unlinkSync(imagePath); // Delete additional tour images files from server
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error handling sub-images upload:", error);
+      throw new Error("Error handling sub-images upload.");
     }
   }
 };
@@ -95,11 +155,22 @@ exports.editTour = async (req, res) => {
       transaction,
     });
 
+    const itneryTourData = await ItneryTour.findAll({
+      where: { tourId: tourId },
+      transaction,
+    });
+
     if (!tour) {
       await transaction.rollback();
       return res.status(404).json({
         success: false,
         message: "Tour not found",
+      });
+    } else if (!itneryTourData) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        message: "ItneryTourData not found",
       });
     }
 
@@ -122,6 +193,8 @@ exports.editTour = async (req, res) => {
         await updateTourFields(req, tour);
         // Update tour data fields
         await updateTourDataFields(req, tour);
+        // Update itinerary tour fields
+        await updateItneryTour(req, itneryTourData, transaction);
         // Handle title image upload
         await handleTourTitleImageUpload(
           req,
@@ -240,34 +313,44 @@ exports.createTour = (req, res) => {
         { transaction }
       );
 
-      // let parsedItneryTourDetails = JSON.parse(itneryTourDetails);
+      //itneryTourDetails is available then it should run
+      if (itneryTourDetails) {
+        let parsedItneryTourDetails = JSON.parse(itneryTourDetails);
 
-      // if (
-      //   Array.isArray(parsedItneryTourDetails) &&
-      //   parsedItneryTourDetails.length > 0
-      // ) {
-      //   // Map the parsed itneryTourDetails to match the ItneryTour model fields
-      //   const itneryTourDetailsCreate = parsedItneryTourDetails.map(
-      //     (itinerary) => ({
-      //       title: itinerary.title,
-      //       desc: itinerary.desc,
-      //       day: itinerary.day,
-      //       tourId: newTour.id, // Assuming newTour.id is set correctly
-      //     }),
-      //     { transaction }
-      //   );
-      //   try {
-      //     // Bulk create the ItneryTour entries
-      //     await ItneryTour.bulkCreate(itneryTourDetailsCreate);
-      //     console.log("ItneryTour entries created successfully.");
-      //   } catch (error) {
-      //     console.error("Error creating ItneryTour entries:", error);
-      //     // Handle the error appropriately
-      //   }
-      // } else {
-      //   console.error("Invalid or empty itneryTourDetails array.");
-      //   // Handle case where itneryTourDetails is not in expected format or is empty
-      // }
+        if (
+          Array.isArray(parsedItneryTourDetails) &&
+          parsedItneryTourDetails.length > 0
+        ) {
+          // Iterate over each itinerary and perform the update
+          for (const itinerary of parsedItneryTourDetails) {
+            const { title, desc, day } = itinerary;
+
+            try {
+              // Perform the update
+              await ItneryTour.create(
+                { title: title, desc: desc, day: day, tourId: newTour.id },
+                { transaction }
+              );
+            } catch (updateError) {
+              console.error(
+                `Error updating ItneryTour entry with id ${id}:`,
+                updateError
+              );
+              res.status(500).json({
+                success: false,
+                message: `Error updating ItneryTour entry with id ${id}:updateError`,
+              });
+            }
+          }
+          console.log("ItneryTour entries updated successfully.");
+        } else {
+          console.error("Invalid or empty ItneryTourDetails array.");
+          res.status(500).json({
+            success: false,
+            message: "Invalid or empty ItneryTourDetails array.",
+          });
+        }
+      }
 
       // Commit the transaction
       await transaction.commit();
@@ -297,6 +380,10 @@ exports.getTourById = async (req, res) => {
       include: [{ model: SubImages }, { model: TourData }],
     });
 
+    const itneryTourData = await ItneryTour.findAll({
+      where: { tourId: id },
+    });
+
     if (!tour) {
       return res.status(404).json({
         success: false,
@@ -307,6 +394,7 @@ exports.getTourById = async (req, res) => {
     res.status(200).json({
       success: true,
       data: tour,
+      itneryTourData,
     });
   } catch (error) {
     console.error("Error fetching tour:", error);
@@ -341,7 +429,9 @@ exports.deleteTour = async (req, res) => {
 
   try {
     // Find the tour by ID
-    const tour = await Tour.findByPk(tourId);
+    const tour = await Tour.findByPk(tourId, {
+      include: [{ model: SubImages }],
+    });
 
     if (!tour) {
       return res.status(404).json({
@@ -365,14 +455,14 @@ exports.deleteTour = async (req, res) => {
       fs.unlinkSync(imagePath); // Delete tour title image file from server
     }
 
-    if (tour.tourImages && tour.tourImages.length > 0) {
-      tour.tourImages.forEach((image) => {
+    if (tour.SubImages && tour.SubImages.length > 0) {
+      tour.SubImages.forEach((image) => {
         const imagePath = path.join(
           __dirname,
           "..",
           "uploads",
           "images",
-          image
+          image.filename
         );
         fs.unlinkSync(imagePath); // Delete additional tour images files from server
       });
