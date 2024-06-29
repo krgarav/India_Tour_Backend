@@ -1,9 +1,9 @@
 const express = require("express");
 
-const app = express();
 const path = require("path");
 
 const https = require("https");
+const http = require("http");
 const fs = require("fs");
 const http = require("http");
 const sequelize = require("./utils/database");
