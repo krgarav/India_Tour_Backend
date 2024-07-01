@@ -37,10 +37,6 @@ const Tour = sequelize.define("Tour", {
   },
   rating: {
     type: DataTypes.INTEGER,
-    validate: {
-      min: 1,
-      max: 5,
-    },
   },
   stars: {
     type: DataTypes.FLOAT,

@@ -41,6 +41,7 @@ Tour.hasMany(SubImages, {
 SubImages.belongsTo(Tour, {
   foreignKey: "tourId",
 });
+
 Tour.hasOne(TourData, {
   foreignKey: "tourId",
   onDelete: "CASCADE",
@@ -61,15 +62,12 @@ ItneryTour.belongsTo(Tour, {
   onUpdate: "CASCADE",
 });
 
-TourPackage.hasMany(Tour, {
+Tour.hasMany(TourPackage, {
   foreignKey: "tourId",
   onDelete: "CASCADE",
-  onUpdate: "CASCADE",
 });
-
-Tour.belongsTo(TourPackage, {
+TourPackage.belongsTo(Tour, {
   foreignKey: "tourId",
-  onUpdate: "CASCADE",
 });
 
 sequelize
