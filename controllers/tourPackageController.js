@@ -108,7 +108,6 @@ exports.getAllPackageTours = async (req, res) => {
 exports.getAllPackageToursAndTours = async (req, res) => {
   const { tourPackageId, tourId } = req.query;
 
-
   if (!tourPackageId || !tourId) {
     return res.status(400).json({
       success: false,
@@ -121,12 +120,13 @@ exports.getAllPackageToursAndTours = async (req, res) => {
       where: { TourPackageId: tourPackageId, TourId: tourId },
     });
 
-    if (!packageWithTours) {
+    if (!packageWithTours || packageWithTours.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Tour package not found",
       });
     }
+
     const tour = await Tour.findByPk(packageWithTours[0].TourId);
 
     if (!tour) {
@@ -135,6 +135,7 @@ exports.getAllPackageToursAndTours = async (req, res) => {
         message: "Tour not found",
       });
     }
+
     res.status(200).json({ success: true, packageWithTours, tour });
   } catch (error) {
     console.error("Error retrieving package tours and tours:", error);
@@ -248,10 +249,7 @@ exports.deleteTourFromPackage = async (req, res) => {
   }
 };
 
-
 // working in edit >>>>>>>>>>>>>>>>>
-
-
 
 //EDIT TOUR PACKAGE
 exports.editTourPackage = async (req, res) => {
