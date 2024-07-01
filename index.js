@@ -2,7 +2,9 @@ const express = require("express");
 const app = express();
 const path = require("path");
 
-const https = require("https");
+// const https = require("https");
+const http = require("http");
+
 const fs = require("fs");
 const http = require("http");
 const sequelize = require("./utils/database");
@@ -14,7 +16,12 @@ const ItneryTour = require("./models/itneryTourSchema");
 const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+
 const TourPackage = require("./models/tourPackageSchema");
+
+
+const builtPath = path.join(__dirname, "dist");
+const app = express();
 
 const PORT = 5000; // HTTPS usually runs on port 443
 
@@ -25,6 +32,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // CORS error resolved
 app.use(cors());
 
+app.use(express.static(builtPath));
+app.use((req, res) => {
+  res.sendFile(path.join(__dirname, "/dist/index.html"));
+});
 // Routes
 app.use(require("./routes/authRoutes"));
 app.use(require("./routes/tourRoutes"));
