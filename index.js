@@ -1,9 +1,8 @@
 const express = require("express");
-
+const app = express();
 const path = require("path");
 
 const https = require("https");
-const http = require("http");
 const fs = require("fs");
 const http = require("http");
 const sequelize = require("./utils/database");
@@ -29,6 +28,7 @@ app.use(cors());
 // Routes
 app.use(require("./routes/authRoutes"));
 app.use(require("./routes/tourRoutes"));
+app.use(require("./routes/tourPackageRoutes"));
 
 // Serve static files from the 'extractedFiles' directory
 app.use("/images", express.static(path.join(__dirname, "/uploads/images/")));
@@ -64,12 +64,12 @@ ItneryTour.belongsTo(Tour, {
 TourPackage.hasMany(Tour, {
   foreignKey: "tourId",
   onDelete: "CASCADE",
-  onUpdate:"CASCADE"
+  onUpdate: "CASCADE",
 });
 
 Tour.belongsTo(TourPackage, {
   foreignKey: "tourId",
-  onUpdate:"CASCADE"
+  onUpdate: "CASCADE",
 });
 
 sequelize

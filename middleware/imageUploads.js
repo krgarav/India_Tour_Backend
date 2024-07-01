@@ -10,27 +10,6 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // Set storage engine
-// const storage = multer.diskStorage({
-//   destination: uploadDir,
-//   filename: (req, file, cb) => {
-//     // Generate unique filename with timestamp
-//     const timestamp = Date.now();
-//     let filenamePrefix = '';
-//     if (file.fieldname === 'TitleImage') {
-//       filenamePrefix = 'Title-Image';
-//     } else if (file.fieldname === 'SubImages') {
-//       filenamePrefix = 'Sub-Images';
-//     } else {
-//       filenamePrefix = 'File';
-//     }
-
-//     // Ensure extension is retained
-//     const extname = path.extname(file.originalname);
-//     cb(null, `${filenamePrefix}-${timestamp}${extname}`);
-//   },
-// });
-
-// Set storage engine
 const storage = multer.diskStorage({
   destination: uploadDir,
   filename: (req, file, cb) => {
