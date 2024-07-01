@@ -1,11 +1,12 @@
 const express = require("express");
-
+const app = express();
 const path = require("path");
 
 // const https = require("https");
 const http = require("http");
-const fs = require("fs");
 
+const fs = require("fs");
+const http = require("http");
 const sequelize = require("./utils/database");
 const User = require("./models/authSchema");
 const Tour = require("./models/tourSchema");
@@ -15,8 +16,13 @@ const ItneryTour = require("./models/itneryTourSchema");
 const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+
+const TourPackage = require("./models/tourPackageSchema");
+
+
 const builtPath = path.join(__dirname, "dist");
 const app = express();
+
 const PORT = 5000; // HTTPS usually runs on port 443
 
 // Middleware to parse JSON bodies
@@ -33,6 +39,7 @@ app.use((req, res) => {
 // Routes
 app.use(require("./routes/authRoutes"));
 app.use(require("./routes/tourRoutes"));
+app.use(require("./routes/tourPackageRoutes"));
 
 // Serve static files from the 'extractedFiles' directory
 app.use("/images", express.static(path.join(__dirname, "/uploads/images/")));
@@ -45,6 +52,7 @@ Tour.hasMany(SubImages, {
 SubImages.belongsTo(Tour, {
   foreignKey: "tourId",
 });
+
 Tour.hasOne(TourData, {
   foreignKey: "tourId",
   onDelete: "CASCADE",
@@ -63,6 +71,14 @@ Tour.hasOne(ItneryTour, {
 ItneryTour.belongsTo(Tour, {
   foreignKey: "tourId",
   onUpdate: "CASCADE",
+});
+
+Tour.hasMany(TourPackage, {
+  foreignKey: "tourId",
+  onDelete: "CASCADE",
+});
+TourPackage.belongsTo(Tour, {
+  foreignKey: "tourId",
 });
 
 sequelize

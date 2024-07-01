@@ -3,6 +3,7 @@ const Tour = require("../models/tourSchema");
 const TourData = require("../models/metaDataTourSchema");
 const SubImages = require("../models/subImagesSchema");
 const ItneryTour = require("../models/itneryTourSchema");
+const TourPackage = require("../models/tourPackageSchema");
 const upload = require("../middleware/imageUploads"); // Adjust the path to your upload middleware
 const fs = require("fs");
 const path = require("path");
@@ -480,3 +481,4 @@ exports.deleteTour = async (req, res) => {
     });
   }
 };
+
