@@ -12,12 +12,12 @@ const TourPackage = sequelize.define("TourPackage", {
   },
 });
 
-Tour.hasMany(TourPackage, {
-  foreignKey: "tourId",
-  onDelete: "CASCADE",
-});
-TourPackage.belongsTo(Tour, {
-  foreignKey: "tourId",
-});
+// Tour.hasMany(TourPackage, {
+//   foreignKey: "tourId",
+//   onDelete: "CASCADE",
+// });
+// TourPackage.belongsTo(Tour, {
+//   foreignKey: "tourId",
+// });
 
 module.exports = TourPackage;
