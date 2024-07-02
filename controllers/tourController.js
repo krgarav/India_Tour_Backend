@@ -144,6 +144,15 @@ const handleSubImagesUpload = async (
   }
 };
 
+const deleteUploadedFiles = (files) => {
+  for (const file of files) {
+    const filePath = path.join(__dirname, "..", "uploads", "images", file);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  }
+};
+
 //EDIT TOUR
 exports.editTour = async (req, res) => {
   const tourId = req.params.id;
@@ -220,6 +229,17 @@ exports.editTour = async (req, res) => {
       } catch (error) {
         await transaction.rollback();
         console.error("Error editing tour:", error);
+
+        // Delete the newly uploaded images if any error occurs
+        if (req.files && req.files["TitleImage"]) {
+          deleteUploadedFiles([req.files["TitleImage"][0].filename]);
+        }
+        if (req.files && req.files["SubImages"]) {
+          deleteUploadedFiles(
+            req.files["SubImages"].map((file) => file.filename)
+          );
+        }
+
         res.status(500).json({
           success: false,
           message: "Server error. Please try again later.",
@@ -314,7 +334,7 @@ exports.createTour = (req, res) => {
         { transaction }
       );
 
-      //itneryTourDetails is available then it should run
+      // itneryTourDetails is available then it should run
       if (itneryTourDetails) {
         let parsedItneryTourDetails = JSON.parse(itneryTourDetails);
 
@@ -364,6 +384,15 @@ exports.createTour = (req, res) => {
       // Rollback the transaction in case of error
       if (transaction) await transaction.rollback();
       console.error("Error creating tour:", error);
+
+      // Delete the uploaded images if any error occurs
+      if (tourTitleImage) {
+        deleteUploadedFiles([tourTitleImage]);
+      }
+      if (tourImages.length > 0) {
+        deleteUploadedFiles(tourImages);
+      }
+
       res.status(500).json({
         success: false,
         message: "Server error. Please try again later.",
@@ -481,4 +510,3 @@ exports.deleteTour = async (req, res) => {
     });
   }
 };
-
