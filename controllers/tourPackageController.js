@@ -306,6 +306,9 @@ exports.getAllToursRelatedToPackage = async (req, res) => {
     const packageDetails = await TourPackage.findAll({
       where: { id: packageId },
     });
+    // Extract package IDs from the relations
+    const tourIds = packageWithTours.map((relation) => relation.TourId);
+
     if (!packageWithTours || packageWithTours.length === 0) {
       return res.status(404).json({
         success: false,
@@ -313,16 +316,16 @@ exports.getAllToursRelatedToPackage = async (req, res) => {
       });
     }
 
-    const tour = await Tour.findByPk(packageWithTours[0].TourId);
+    const tours = await Tour.findAll({ where: { id: tourIds } });
 
-    if (!tour) {
+    if (!tours) {
       return res.status(404).json({
         success: false,
         message: "Tour not found",
       });
     }
 
-    res.status(200).json({ success: true, packageWithTours, tour,packageDetails });
+    res.status(200).json({ success: true, tours, packageDetails });
   } catch (error) {
     console.error("Error retrieving package tours and tours:", error);
     res.status(500).json({
@@ -345,8 +348,6 @@ exports.getAllPackagesRelatedToTours = async (req, res) => {
     const packageWithTours = await TourTourPackageRelation.findAll({
       where: { TourId: tourId },
     });
- 
-
 
     if (!packageWithTours || packageWithTours.length === 0) {
       return res.status(404).json({
@@ -354,8 +355,10 @@ exports.getAllPackagesRelatedToTours = async (req, res) => {
         message: "Tour package not found",
       });
     }
-  // Extract package IDs from the relations
-    const packageIds = packageWithTours.map(relation => relation.TourPackageId);
+    // Extract package IDs from the relations
+    const packageIds = packageWithTours.map(
+      (relation) => relation.TourPackageId
+    );
 
     // Fetch details for all related packages
     const packageDetails = await TourPackage.findAll({
