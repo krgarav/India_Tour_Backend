@@ -289,7 +289,89 @@ exports.getAllPackageTours = async (req, res) => {
     });
   }
 };
+//Get All  tours related to package
+exports.getAllToursRelatedToPackage = async (req, res) => {
+  const { packageId } = req.params;
+  if (!packageId) {
+    return res.status(400).json({
+      success: false,
+      message: "Tour package ID required",
+    });
+  }
 
+  try {
+    const packageWithTours = await TourTourPackageRelation.findAll({
+      where: { TourPackageId: packageId },
+    });
+    const packageDetails = await TourPackage.findAll({
+      where: { id: packageId },
+    });
+    if (!packageWithTours || packageWithTours.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Tour package not found",
+      });
+    }
+
+    const tour = await Tour.findByPk(packageWithTours[0].TourId);
+
+    if (!tour) {
+      return res.status(404).json({
+        success: false,
+        message: "Tour not found",
+      });
+    }
+
+    res.status(200).json({ success: true, packageWithTours, tour,packageDetails });
+  } catch (error) {
+    console.error("Error retrieving package tours and tours:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while retrieving package tours and tours",
+    });
+  }
+};
+//Get All  tours packages related to tours
+exports.getAllPackagesRelatedToTours = async (req, res) => {
+  const { tourId } = req.params;
+  if (!tourId) {
+    return res.status(400).json({
+      success: false,
+      message: "Tour ID required",
+    });
+  }
+
+  try {
+    const packageWithTours = await TourTourPackageRelation.findAll({
+      where: { TourId: tourId },
+    });
+ 
+
+
+    if (!packageWithTours || packageWithTours.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Tour package not found",
+      });
+    }
+  // Extract package IDs from the relations
+    const packageIds = packageWithTours.map(relation => relation.TourPackageId);
+
+    // Fetch details for all related packages
+    const packageDetails = await TourPackage.findAll({
+      where: {
+        id: packageIds,
+      },
+    });
+    res.status(200).json({ success: true, packageDetails });
+  } catch (error) {
+    console.error("Error retrieving package tours and tours:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while retrieving package tours and tours",
+    });
+  }
+};
 //GET ALL PACKAGES BY PACKAGE TOUR ID
 exports.getAllPackageToursAndTours = async (req, res) => {
   const { tourPackageId, tourId } = req.query;
