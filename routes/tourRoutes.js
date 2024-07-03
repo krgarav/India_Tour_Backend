@@ -4,17 +4,17 @@ const router = express.Router();
 const {
   createTour,
   getTourById,
-  getAllTour,
+  getAllTours,
   editTour,
   deleteTour,
-  
+  getAllTopTours,
 } = require("../controllers/tourController");
 
 router.post("/createtour", createTour);
 router.get("/tour/:id", getTourById); //tourId
-router.get("/tours", getAllTour);
+router.get("/tours", getAllTours);
+router.get("/top/tours", getAllTopTours);
 router.put("/tour/edit/:id", editTour); //tourId
 router.delete("/tour/delete/:id", deleteTour); //tourId
-
 
 module.exports = router;

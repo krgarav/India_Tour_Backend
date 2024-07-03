@@ -1,10 +1,57 @@
 const sequelize = require("../utils/database");
+const { validationResult } = require("express-validator");
 const path = require("path");
 const fs = require("fs");
 const TourPackage = require("../models/tourPackageSchema");
 const TourTourPackageRelation = require("../models/tour-tourPackageRelation");
 const Tour = require("../models/tourSchema");
 const upload = require("../middleware/imageUploads"); // Adjust the path to your upload middleware
+
+//GET RELATED TOURS
+exports.getRelatedTours = async (req, res) => {
+  const { city, state } = req.query;
+
+  try {
+    let whereClause = {};
+    if (city) {
+      whereClause.tourLocationCity = city;
+    }
+    if (state) {
+      whereClause.tourLocationState = state;
+    }
+
+    // Fetch initial related tours
+    let tours = await Tour.findAll({ where: whereClause });
+
+    // If the length is less than 3, fetch more tours to fill up
+    if (tours.length < 3) {
+      const fetchedTourIds = tours.map((tour) => tour.id);
+
+      const additionalTours = await Tour.findAll({
+        where: {
+          id: {
+            [Op.notIn]: fetchedTourIds,
+          },
+        },
+        order: sequelize.random(), // Fetch in random order
+        limit: 3 - tours.length,
+      });
+
+      tours = tours.concat(additionalTours);
+    }
+
+    if (!tours.length) {
+      return res.status(404).json({ message: "No related tours found." });
+    }
+
+    return res.status(200).json(tours);
+  } catch (error) {
+    console.error("Error retrieving related tours:", error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred while retrieving related tours." });
+  }
+};
 
 //CREATE TOUR PACKAGE
 exports.createTourPackage = async (req, res) => {
@@ -21,6 +68,26 @@ exports.createTourPackage = async (req, res) => {
     // Extract tourPackageImage filename
     const tourPackageBgImageName =
       req.files?.TourBGImage?.[0]?.filename || null;
+    let imagePath;
+    if (tourPackageBgImageName !== null) {
+      imagePath = path.join(
+        __dirname,
+        "..",
+        "uploads",
+        "images",
+        tourPackageBgImageName
+      );
+    }
+
+    if (!tourPackageTitle || !toursIncluded) {
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+      return res.status(400).json({
+        success: false,
+        message: "Tour Package Title, Tours, or Background Image is empty",
+      });
+    }
 
     let transaction;
 
@@ -34,22 +101,29 @@ exports.createTourPackage = async (req, res) => {
           : toursIncluded;
 
       // Validate that toursArray is an array
-      if (!Array.isArray(toursArray) || toursArray.length === 0) {
+      if (!Array.isArray(toursArray)) {
         await transaction.rollback();
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
         return res.status(400).json({
           success: false,
           message: "Invalid or empty toursIncluded array.",
         });
       }
 
-      // Validate that tourPackageTitle already available
-      if (
-        await TourPackage.findOne({ where: { packageTitle: tourPackageTitle } })
-      ) {
+      // Validate that tourPackageTitle is unique
+      const existingPackage = await TourPackage.findOne({
+        where: { packageTitle: tourPackageTitle },
+      });
+      if (existingPackage) {
         await transaction.rollback();
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
         return res.status(400).json({
           success: false,
-          message: "Duplicate Tour Package Can't Created",
+          message: "Duplicate Tour Package. Cannot create.",
         });
       }
 
@@ -77,11 +151,123 @@ exports.createTourPackage = async (req, res) => {
 
       res.status(200).json({
         success: true,
-        message: "Tour packages created successfully.",
+        message: "Tour package created successfully.",
       });
     } catch (error) {
       if (transaction) await transaction.rollback();
-      console.error("Error creating tour packages:", error);
+      console.error("Error creating tour package:", error);
+
+      // Delete the uploaded image if any error occurs
+      if (imagePath && fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+
+      res.status(500).json({
+        success: false,
+        message: "Server error. Please try again later.",
+      });
+    }
+  });
+};
+
+//EDIT TOUR PACKAGE TITLE AND BACKGROUND IMAGE
+exports.editTourPackage = async (req, res) => {
+  upload(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      });
+    }
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid input.",
+        errors: errors.array(),
+      });
+    }
+
+    const tourPackageId = req.params.id;
+    const { tourPackageTitle } = req.body;
+    const tourPackageBgImageName =
+      req.files?.TourBGImage?.[0]?.filename || null;
+
+    let newImagePath;
+    if (tourPackageBgImageName !== null) {
+      newImagePath = path.join(
+        __dirname,
+        "..",
+        "uploads",
+        "images",
+        tourPackageBgImageName
+      );
+    }
+
+    let transaction;
+
+    try {
+      transaction = await sequelize.transaction();
+
+      const tourPackage = await TourPackage.findByPk(tourPackageId, {
+        transaction,
+      });
+      if (!tourPackage) {
+        await transaction.rollback();
+        if (newImagePath && fs.existsSync(newImagePath)) {
+          fs.unlinkSync(newImagePath);
+        }
+        return res.status(404).json({
+          success: false,
+          message: "Tour package not found.",
+        });
+      }
+
+      if (tourPackageBgImageName) {
+        const previousBGImageName = tourPackage.backgroundImage;
+
+        if (previousBGImageName) {
+          // Delete associated image from server (if any)
+          const prevImagePath = path.join(
+            __dirname,
+            "..",
+            "uploads",
+            "images",
+            previousBGImageName
+          );
+
+          try {
+            if (fs.existsSync(prevImagePath)) {
+              fs.unlinkSync(prevImagePath); // Delete previous tour package image file from server
+            }
+          } catch (fsError) {
+            console.error("Error deleting previous background image:", fsError);
+          }
+        }
+      }
+
+      tourPackage.packageTitle = tourPackageTitle || tourPackage.packageTitle;
+      tourPackage.backgroundImage =
+        tourPackageBgImageName || tourPackage.backgroundImage;
+
+      await tourPackage.save({ transaction });
+
+      await transaction.commit();
+
+      res.status(200).json({
+        success: true,
+        message: "Tour package updated successfully.",
+      });
+    } catch (error) {
+      if (transaction) await transaction.rollback();
+      console.error("Error updating tour package:", error);
+
+      // Delete the newly uploaded image if any error occurs
+      if (newImagePath && fs.existsSync(newImagePath)) {
+        fs.unlinkSync(newImagePath);
+      }
+
       res.status(500).json({
         success: false,
         message: "Server error. Please try again later.",
@@ -249,73 +435,89 @@ exports.deleteTourFromPackage = async (req, res) => {
   }
 };
 
-// working in edit >>>>>>>>>>>>>>>>>
+//ADD TOURS TO TOUR PACKAGE
+exports.addTourInTourPackage = async (req, res) => {
+  const { tourPackageId, toursIncluded } = req.body;
 
-//EDIT TOUR PACKAGE
-exports.editTourPackage = async (req, res) => {
-  upload(req, res, async (err) => {
-    if (err) {
+  if (!tourPackageId || !toursIncluded) {
+    return res
+      .status(400)
+      .send({ message: "Invalid tour package ID or tours included" });
+  }
+
+  let transaction;
+
+  try {
+    transaction = await sequelize.transaction();
+
+    // Parse toursIncluded if it's a string (e.g., if sent as JSON)
+    const toursArray =
+      typeof toursIncluded === "string"
+        ? JSON.parse(toursIncluded)
+        : toursIncluded;
+
+    // Validate that toursArray is an array
+    if (!Array.isArray(toursArray)) {
+      await transaction.rollback();
       return res.status(400).json({
         success: false,
-        message: err.message,
+        message: "Invalid or empty toursIncluded array.",
       });
     }
 
-    const tourPackageId = req.params.id;
-    const { tourPackageTitle, toursIncluded } = req.body;
-
-    // Extract tourPackageImage filename
-    const tourPackageBgImageName =
-      req.files?.TourBGImage?.[0]?.filename || null;
-
-    let transaction;
+    const existingTours = [];
 
     try {
-      transaction = await sequelize.transaction();
+      // Use Promise.all to ensure all async operations complete
+      await Promise.all(
+        toursArray.map(async (tourId) => {
+          // Check if the relation already exists
+          const existingRelation = await TourTourPackageRelation.findOne({
+            where: {
+              TourPackageId: tourPackageId,
+              TourId: tourId,
+            },
+            transaction,
+          });
 
-      // Check if the tour package exists
-      const tourPackage = await TourPackage.findByPk(tourPackageId, {
-        transaction,
-      });
+          if (existingRelation) {
+            existingTours.push(tourId);
+          } else {
+            // Create the new relation if it doesn't exist
+            await TourTourPackageRelation.create(
+              {
+                TourPackageId: tourPackageId,
+                TourId: tourId,
+              },
+              { transaction }
+            );
+          }
+        })
+      );
 
-      if (!tourPackage) {
+      if (existingTours.length > 0) {
         await transaction.rollback();
-        return res.status(404).json({
-          success: false,
-          message: "Tour package not found.",
+        return res.status(400).json({
+          message: "One of the Tour Already Added in this Package",
         });
       }
-
-      const tourPackageData = await TourPackage.findAll({
-        where: {
-          packageTitle: tourPackage.packageTitle,
-        },
-        transaction,
-      });
-
-      for (const tour of tourPackageData) {
-        // Update the tour package details
-        tour.packageTitle = tourPackageTitle || tour.packageTitle;
-        if (tourPackageBgImageName) {
-          tour.backgroundImage = tourPackageBgImageName;
-        }
-        await tour.save({ transaction });
-      }
-
-      // Commit the transaction
-      await transaction.commit();
-
-      res.status(200).json({
-        success: true,
-        message: "Tour package updated successfully.",
-      });
     } catch (error) {
-      if (transaction) await transaction.rollback();
-      console.error("Error updating tour package:", error);
-      res.status(500).json({
-        success: false,
-        message: "Server error. Please try again later.",
+      await transaction.rollback();
+      return res.status(500).send({
+        message: "An error occurred while adding tours to the package.",
+        error: error.message,
       });
     }
-  });
+
+    await transaction.commit();
+
+    res.status(200).send({ message: "Tours successfully added to package" });
+  } catch (error) {
+    if (transaction) await transaction.rollback();
+    console.error("Error adding tours to package:", error);
+    res.status(500).send({
+      message: "An error occurred while adding the tours to the package",
+      error: error.message,
+    });
+  }
 };

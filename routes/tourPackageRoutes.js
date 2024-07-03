@@ -8,12 +8,16 @@ const {
   getAllPackageToursAndTours,
   getAllPackageTours,
   editTourPackage,
+  addTourInTourPackage,
+  getRelatedTours,
 } = require("../controllers/tourPackageController");
 
-router.get("/get/tourpackages", getAllPackageTours); 
-router.get("/get/tourpackage/details", getAllPackageToursAndTours); /*tourpackageId*/
+router.get("/get/tourpackages", getAllPackageTours);
+router.get("/get/tourpackage/details",getAllPackageToursAndTours); /*tourpackageId*/
+router.get("/get/related/tours", getRelatedTours); /*tourpackageId*/
 router.post("/createtourpackage", createTourPackage);
-// router.put("/edittourpackage/:id", editTourPackage);
+router.post("/add/tour/tourpackage", addTourInTourPackage);
+router.put("/edit/tourpackage/:id", editTourPackage); /*tourpackageId*/
 router.delete("/delete/tourpackage/:id", deleteTourPackage); /*tourpackageId*/
 router.delete("/delete/tourfrompackage", deleteTourFromPackage);
 

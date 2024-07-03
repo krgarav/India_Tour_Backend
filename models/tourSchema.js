@@ -27,7 +27,11 @@ const Tour = sequelize.define("Tour", {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  tourLocation: {
+  tourLocationCity: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  tourLocationState: {
     type: DataTypes.STRING,
     allowNull: false,
   },
@@ -46,6 +50,5 @@ const Tour = sequelize.define("Tour", {
     },
   },
 });
-
 
 module.exports = Tour;
