@@ -3,7 +3,6 @@ const Tour = require("../models/tourSchema");
 const TourData = require("../models/metaDataTourSchema");
 const SubImages = require("../models/subImagesSchema");
 const ItneryTour = require("../models/itneryTourSchema");
-const TourPackage = require("../models/tourPackageSchema");
 const upload = require("../middleware/imageUploads"); // Adjust the path to your upload middleware
 const fs = require("fs");
 const path = require("path");
@@ -14,7 +13,8 @@ const updateTourFields = async (req, tour) => {
   tour.tourPrice = req.body.price || tour.tourPrice;
   tour.tourDurationDay = req.body.durationDay || tour.tourDurationDay;
   tour.tourDurationNight = req.body.durationNight || tour.tourDurationNight;
-  tour.tourLocation = req.body.location || tour.tourLocation;
+  tour.tourLocationCity = req.body.city || tour.tourLocationCity;
+  tour.tourLocationState = req.body.state || tour.tourLocationState;
   tour.topDeals = req.body.deals || tour.topDeals;
   tour.rating = req.body.rating || tour.rating;
   tour.stars = req.body.stars || tour.stars;
@@ -67,7 +67,7 @@ const updateItneryTour = async (req, itneryTourData, transaction) => {
           }
         }
 
-        console.log("ItneryTour entries updated successfully.");
+        // console.log("ItneryTour entries updated successfully.");
       } catch (error) {
         console.error("Error updating ItneryTour entries:", error);
         throw new Error("Error updating ItneryTour entries.");
@@ -272,7 +272,8 @@ exports.createTour = (req, res) => {
       price,
       durationDay,
       durationNight,
-      location,
+      city,
+      state,
       deals,
       rating,
       stars,
@@ -303,7 +304,8 @@ exports.createTour = (req, res) => {
           tourPrice: price,
           tourDurationDay: durationDay,
           tourDurationNight: durationNight,
-          tourLocation: location,
+          tourLocationCity: city,
+          tourLocationState: state,
           topDeals: deals,
           rating: rating,
           stars: stars,
@@ -436,7 +438,7 @@ exports.getTourById = async (req, res) => {
 };
 
 //GET ALL TOURS
-exports.getAllTour = async (req, res) => {
+exports.getAllTours = async (req, res) => {
   try {
     let tours = await Tour.findAll({});
 
@@ -504,6 +506,26 @@ exports.deleteTour = async (req, res) => {
     });
   } catch (error) {
     console.error("Error deleting tour:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error. Please try again later.",
+    });
+  }
+};
+
+//GET ALL TOP DEAL TOURS
+exports.getAllTopTours = async (req, res) => {
+  try {
+    let tours = await Tour.findAll({
+      where: { topDeals: true },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: tours,
+    });
+  } catch (error) {
+    console.error("Error fetching tours:", error);
     res.status(500).json({
       success: false,
       message: "Server error. Please try again later.",

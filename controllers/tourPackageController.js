@@ -7,6 +7,52 @@ const TourTourPackageRelation = require("../models/tour-tourPackageRelation");
 const Tour = require("../models/tourSchema");
 const upload = require("../middleware/imageUploads"); // Adjust the path to your upload middleware
 
+//GET RELATED TOURS
+exports.getRelatedTours = async (req, res) => {
+  const { city, state } = req.query;
+
+  try {
+    let whereClause = {};
+    if (city) {
+      whereClause.tourLocationCity = city;
+    }
+    if (state) {
+      whereClause.tourLocationState = state;
+    }
+
+    // Fetch initial related tours
+    let tours = await Tour.findAll({ where: whereClause });
+
+    // If the length is less than 3, fetch more tours to fill up
+    if (tours.length < 3) {
+      const fetchedTourIds = tours.map((tour) => tour.id);
+
+      const additionalTours = await Tour.findAll({
+        where: {
+          id: {
+            [Op.notIn]: fetchedTourIds,
+          },
+        },
+        order: sequelize.random(), // Fetch in random order
+        limit: 3 - tours.length,
+      });
+
+      tours = tours.concat(additionalTours);
+    }
+
+    if (!tours.length) {
+      return res.status(404).json({ message: "No related tours found." });
+    }
+
+    return res.status(200).json(tours);
+  } catch (error) {
+    console.error("Error retrieving related tours:", error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred while retrieving related tours." });
+  }
+};
+
 //CREATE TOUR PACKAGE
 exports.createTourPackage = async (req, res) => {
   upload(req, res, async (err) => {
@@ -419,18 +465,49 @@ exports.addTourInTourPackage = async (req, res) => {
       });
     }
 
-    // Use Promise.all to ensure all async operations complete
-    await Promise.all(
-      toursArray.map((tourId) =>
-        TourTourPackageRelation.create(
-          {
-            TourPackageId: tourPackageId,
-            TourId: tourId,
-          },
-          { transaction }
-        )
-      )
-    );
+    const existingTours = [];
+
+    try {
+      // Use Promise.all to ensure all async operations complete
+      await Promise.all(
+        toursArray.map(async (tourId) => {
+          // Check if the relation already exists
+          const existingRelation = await TourTourPackageRelation.findOne({
+            where: {
+              TourPackageId: tourPackageId,
+              TourId: tourId,
+            },
+            transaction,
+          });
+
+          if (existingRelation) {
+            existingTours.push(tourId);
+          } else {
+            // Create the new relation if it doesn't exist
+            await TourTourPackageRelation.create(
+              {
+                TourPackageId: tourPackageId,
+                TourId: tourId,
+              },
+              { transaction }
+            );
+          }
+        })
+      );
+
+      if (existingTours.length > 0) {
+        await transaction.rollback();
+        return res.status(400).json({
+          message: "One of the Tour Already Added in this Package",
+        });
+      }
+    } catch (error) {
+      await transaction.rollback();
+      return res.status(500).send({
+        message: "An error occurred while adding tours to the package.",
+        error: error.message,
+      });
+    }
 
     await transaction.commit();
 
@@ -440,6 +517,7 @@ exports.addTourInTourPackage = async (req, res) => {
     console.error("Error adding tours to package:", error);
     res.status(500).send({
       message: "An error occurred while adding the tours to the package",
+      error: error.message,
     });
   }
 };
