@@ -347,7 +347,8 @@ exports.createTour = (req, res) => {
           // Iterate over each itinerary and perform the update
           for (const itinerary of parsedItneryTourDetails) {
             const { title, desc, day } = itinerary;
-
+console.log(  day );
+// return
             try {
               // Perform the update
               await ItneryTour.create(
@@ -356,12 +357,12 @@ exports.createTour = (req, res) => {
               );
             } catch (updateError) {
               console.error(
-                `Error updating ItneryTour entry with id ${id}:`,
+                `Error updating ItneryTour entry with id :`,
                 updateError
               );
               res.status(500).json({
                 success: false,
-                message: `Error updating ItneryTour entry with id ${id}:updateError`,
+                message: `Error updating ItneryTour entry with id :${updateError}`,
               });
             }
           }
