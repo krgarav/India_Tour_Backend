@@ -33,10 +33,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
 
 app.use(express.static(builtPath));
-// Handle all other routes and serve React's index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.join(builtPath, 'index.html'));
-});
+
 // Routes
 app.use(require("./routes/authRoutes"));
 app.use(require("./routes/tourRoutes"));
@@ -44,6 +41,10 @@ app.use(require("./routes/tourPackageRoutes"));
 
 // Serve static files from the 'extractedFiles' directory
 app.use("/images", express.static(path.join(__dirname, "/uploads/images/")));
+// Handle all other routes and serve React's index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(builtPath, 'index.html'));
+});
 
 // Table Relations
 Tour.hasMany(SubImages, {
