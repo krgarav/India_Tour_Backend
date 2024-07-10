@@ -2,8 +2,8 @@ const express = require("express");
 // const app = express();
 const path = require("path");
 
-// const https = require("https");
-const http = require("http");
+const https = require("https");
+// const http = require("http");
 
 const fs = require("fs");
 // const http = require("http");
@@ -95,12 +95,12 @@ sequelize
     }
 
     // // Read SSL certificate and key files
-    // const options = {
-    //   key: fs.readFileSync("/etc/letsencrypt/live/testtour.uk.to/privkey.pem"), // Replace with your private key file path
-    //   cert: fs.readFileSync("/etc/letsencrypt/live/testtour.uk.to/fullchain.pem") // Replace with your fullchain.pem file path
-    // };
+    const options = {
+      key: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/privkey.pem"), // Replace with your private key file path
+      cert: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/fullchain.pem") // Replace with your fullchain.pem file path
+    };
 
-    http.createServer(app).listen(PORT, () => {
+    https.createServer(options,app).listen(PORT, () => {
       console.log(`HTTPS Server is running on port ${PORT}`);
     });
   })

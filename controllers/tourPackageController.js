@@ -6,6 +6,7 @@ const TourPackage = require("../models/tourPackageSchema");
 const TourTourPackageRelation = require("../models/tour-tourPackageRelation");
 const Tour = require("../models/tourSchema");
 const upload = require("../middleware/imageUploads"); // Adjust the path to your upload middleware
+const { Op } = require("sequelize");
 
 //GET RELATED TOURS
 exports.getRelatedTours = async (req, res) => {
