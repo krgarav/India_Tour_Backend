@@ -32,10 +32,11 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // CORS error resolved
 app.use(cors());
 
-// app.use(express.static(builtPath));
-// app.use((req, res) => {
-//   res.sendFile(path.join(__dirname, "/dist/index.html"));
-// });
+app.use(express.static(builtPath));
+// Handle all other routes and serve React's index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(builtPath, 'index.html'));
+});
 // Routes
 app.use(require("./routes/authRoutes"));
 app.use(require("./routes/tourRoutes"));
