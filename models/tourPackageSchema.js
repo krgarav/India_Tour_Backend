@@ -10,6 +10,11 @@ const TourPackage = sequelize.define("TourPackage", {
   backgroundImage: {
     type: DataTypes.STRING,
   },
+
+  homePageSection: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
 });
 
 // Tour.hasMany(TourPackage, {

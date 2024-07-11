@@ -3,6 +3,7 @@ const Tour = require("../models/tourSchema");
 const TourData = require("../models/metaDataTourSchema");
 const SubImages = require("../models/subImagesSchema");
 const ItneryTour = require("../models/itneryTourSchema");
+const TourPackage = require("../models/tourPackageSchema");
 const upload = require("../middleware/imageUploads"); // Adjust the path to your upload middleware
 const fs = require("fs");
 const path = require("path");
@@ -529,6 +530,154 @@ exports.getAllTopTours = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error. Please try again later.",
+    });
+  }
+};
+
+//FETCH HOMEPAGE SECTION
+exports.fetchHomePageSection = async (req, res) => {
+  const { tourPackageIdArray } = req.body;
+
+  if (!Array.isArray(tourPackageIdArray) || tourPackageIdArray.length === 0) {
+    return res.status(400).json({
+      error: "Invalid input: 'tourPackageIdArray' must be a non-empty array.",
+    });
+  }
+
+  try {
+    const tourPackages = await Promise.all(
+      tourPackageIdArray.map(async (tourPackageId) => {
+        try {
+          const tourPackage = await TourPackage.findOne({
+            where: { id: tourPackageId, homePageSection: true },
+            include: [
+              {
+                model: Tour,
+                through: { attributes: [] }, // Exclude join table attributes
+              },
+            ],
+          });
+
+          // Limit the number of related tours to 3
+          if (tourPackage) {
+            const limitedTours = tourPackage.Tours.slice(0, 3);
+            return {
+              ...tourPackage.toJSON(),
+              Tours: limitedTours,
+            };
+          }
+
+          return null;
+        } catch (error) {
+          console.error(
+            `Error fetching tour package with id ${tourPackageId}:`,
+            error
+          );
+          return null;
+        }
+      })
+    );
+
+    const filteredTourPackages = tourPackages.filter(
+      (tourPackage) => tourPackage !== null
+    );
+
+    if (filteredTourPackages.length === 0) {
+      return res.status(200).json({});
+    }
+
+    res.status(200).json(filteredTourPackages);
+  } catch (error) {
+    console.error("Error fetching home page section:", error);
+    res.status(500).json({
+      error: "An internal server error occurred while fetching tour packages.",
+    });
+  }
+};
+
+//ADD TOURSPACKAGE TO HOMEPAGE SECTION
+exports.addToHomePageSection = async (req, res) => {
+  const { tourPackageIdArray } = req.body;
+
+  if (!Array.isArray(tourPackageIdArray) || tourPackageIdArray.length === 0) {
+    return res.status(400).json({
+      error: "Invalid input: 'tourPackageIdArray' must be a non-empty array.",
+    });
+  }
+
+  try {
+    await Promise.all(
+      tourPackageIdArray.map(async (tourPackageId) => {
+        try {
+          const tourPackage = await TourPackage.findOne({
+            where: { id: tourPackageId },
+          });
+          if (!tourPackage) {
+            console.warn(`Tour package with id ${tourPackageId} not found.`);
+            return null;
+          }
+
+          // Update the homePageSection field to true
+          tourPackage.homePageSection = true;
+          await tourPackage.save();
+        } catch (error) {
+          console.error(
+            `Error updating tour package with id ${tourPackageId}:`,
+            error
+          );
+          return null;
+        }
+      })
+    );
+
+    res.status(200).json({ message: "Update Successfully" });
+  } catch (error) {
+    console.error("Error updating home page section:", error);
+    res.status(500).json({
+      error: "An internal server error occurred while updating tour packages.",
+    });
+  }
+};
+
+exports.removeHomePageSection = async (req, res) => {
+  const { tourPackageIdArray } = req.body;
+
+  if (!Array.isArray(tourPackageIdArray) || tourPackageIdArray.length === 0) {
+    return res.status(400).json({
+      error: "Invalid input: 'tourPackageIdArray' must be a non-empty array.",
+    });
+  }
+
+  try {
+    await Promise.all(
+      tourPackageIdArray.map(async (tourPackageId) => {
+        try {
+          const tourPackage = await TourPackage.findOne({
+            where: { id: tourPackageId },
+          });
+          if (!tourPackage) {
+            console.warn(`Tour package with id ${tourPackageId} not found.`);
+            return null;
+          }
+
+          // Update the homePageSection field to true
+          tourPackage.homePageSection = false;
+          await tourPackage.save();
+        } catch (error) {
+          console.error(
+            `Error updating tour package with id ${tourPackageId}:`,
+            error
+          );
+          return null;
+        }
+      })
+    );
+
+    res.status(200).json({ message: "Update Successfully" });
+  } catch (error) {
+    console.error("Error updating home page section:", error);
+    res.status(500).json({
+      error: "An internal server error occurred while updating tour packages.",
     });
   }
 };
