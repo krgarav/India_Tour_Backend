@@ -8,9 +8,15 @@ const {
   editTour,
   deleteTour,
   getAllTopTours,
+  fetchHomePageSection,
+  addToHomePageSection,
+  removeHomePageSection,
 } = require("../controllers/tourController");
 
 router.post("/createtour", createTour);
+router.post("/fetchhomepagesection", fetchHomePageSection);
+router.post("/addhomepagesection", addToHomePageSection);
+router.post("/removehomepagesection", removeHomePageSection);
 router.get("/tour/:id", getTourById); //tourId
 router.get("/tours", getAllTours);
 router.get("/top/tours", getAllTopTours);
