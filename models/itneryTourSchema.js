@@ -4,11 +4,11 @@ const Tour = require("./tourSchema");
 
 const ItneryTour = sequelize.define('ItneryTour', { // Model name is required here
   title: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false, // Add constraints as needed
   },
   desc: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false, // Add constraints as needed
   },
   day: {

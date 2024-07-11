@@ -3,11 +3,11 @@ const sequelize = require("../utils/database");
 
 const Tour = sequelize.define("Tour", {
   tourTitle: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false,
   },
   miniTourDesc: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false,
   },
   tourTitleImage: {

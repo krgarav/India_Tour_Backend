@@ -10,10 +10,15 @@ const {
   editTourPackage,
   addTourInTourPackage,
   getRelatedTours,
+  getAllToursRelatedToPackage,
+  getAllPackagesRelatedToTours
+
 } = require("../controllers/tourPackageController");
 
 router.get("/get/tourpackages", getAllPackageTours);
 router.get("/get/tourpackage/details",getAllPackageToursAndTours); /*tourpackageId*/
+router.get("/get/tourpackage/:packageId",getAllToursRelatedToPackage); /*tourpackageId*/
+router.get("/gettourpackages/:tourId",getAllPackagesRelatedToTours); /*tourId*/
 router.get("/get/related/tours", getRelatedTours); /*tourpackageId*/
 router.post("/createtourpackage", createTourPackage);
 router.post("/add/tour/tourpackage", addTourInTourPackage);
