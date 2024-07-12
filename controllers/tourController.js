@@ -348,8 +348,8 @@ exports.createTour = (req, res) => {
           // Iterate over each itinerary and perform the update
           for (const itinerary of parsedItneryTourDetails) {
             const { title, desc, day } = itinerary;
-console.log(  day );
-// return
+            console.log(day);
+            // return
             try {
               // Perform the update
               await ItneryTour.create(
@@ -537,69 +537,86 @@ exports.getAllTopTours = async (req, res) => {
 
 //FETCH HOMEPAGE SECTION
 exports.fetchHomePageSection = async (req, res) => {
-  const { tourPackageIdArray } = req.body;
-
-  if (!Array.isArray(tourPackageIdArray) || tourPackageIdArray.length === 0) {
-    return res.status(400).json({
-      error: "Invalid input: 'tourPackageIdArray' must be a non-empty array.",
-    });
-  }
 
   try {
-    const tourPackages = await Promise.all(
-      tourPackageIdArray.map(async (tourPackageId) => {
-        try {
-          const tourPackage = await TourPackage.findOne({
-            where: { id: tourPackageId, homePageSection: true },
-            include: [
-              {
-                model: Tour,
-                through: { attributes: [] }, // Exclude join table attributes
-              },
-            ],
-          });
-
-          // Limit the number of related tours to 3
-          if (tourPackage) {
-            const limitedTours = tourPackage.Tours.slice(0, 3);
-            return {
-              ...tourPackage.toJSON(),
-              Tours: limitedTours,
-            };
-          }
-
-          return null;
-        } catch (error) {
-          console.error(
-            `Error fetching tour package with id ${tourPackageId}:`,
-            error
-          );
-          return null;
-        }
-      })
-    );
-
-    const filteredTourPackages = tourPackages.filter(
-      (tourPackage) => tourPackage !== null
-    );
-
-    if (filteredTourPackages.length === 0) {
-      return res.status(200).json({});
-    }
-
-    res.status(200).json(filteredTourPackages);
+    const tourPackage = await TourPackage.findAll({
+      where: { homePageSection: true },
+      include: [
+        {
+          model: Tour,
+          through: { attributes: [] }, // Exclude join table attributes
+        },
+      ],
+    });
+    res.status(200).json({
+      success: true,
+      message: "Tour packages found.",
+      tourPackage
+    });
   } catch (error) {
-    console.error("Error fetching home page section:", error);
+    console.error("Error fetching tour packages:", error);
     res.status(500).json({
-      error: "An internal server error occurred while fetching tour packages.",
+      success: false,
+      message: "Server error. Please try again later.",
+      error
     });
   }
+
+
+  //   const tourPackages = await Promise.all(
+  //     tourPackageIdArray.map(async (tourPackageId) => {
+  //       try {
+  //         const tourPackage = await TourPackage.findOne({
+  //           where: { id: tourPackageId, homePageSection: true },
+  //           include: [
+  //             {
+  //               model: Tour,
+  //               through: { attributes: [] }, // Exclude join table attributes
+  //             },
+  //           ],
+  //         });
+
+  //         // Limit the number of related tours to 3
+  //         if (tourPackage) {
+  //           const limitedTours = tourPackage.Tours.slice(0, 3);
+  //           return {
+  //             ...tourPackage.toJSON(),
+  //             Tours: limitedTours,
+  //           };
+  //         }
+
+  //         return null;
+  //       } catch (error) {
+  //         console.error(
+  //           `Error fetching tour package with id ${tourPackageId}:`,
+  //           error
+  //         );
+  //         return null;
+  //       }
+  //     })
+  //   );
+
+  //   const filteredTourPackages = tourPackages.filter(
+  //     (tourPackage) => tourPackage !== null
+  //   );
+
+  //   if (filteredTourPackages.length === 0) {
+  //     return res.status(200).json({});
+  //   }
+
+  //   res.status(200).json(filteredTourPackages);
+  // } catch (error) {
+  //   console.error("Error fetching home page section:", error);
+  //   res.status(500).json({
+  //     error: "An internal server error occurred while fetching tour packages.",
+  //   });
+  // }
 };
 
 //ADD TOURSPACKAGE TO HOMEPAGE SECTION
 exports.addToHomePageSection = async (req, res) => {
-  const { tourPackageIdArray } = req.body;
-
+  const tourPackageIdArray = req.body;
+  console.log(req.body)
   if (!Array.isArray(tourPackageIdArray) || tourPackageIdArray.length === 0) {
     return res.status(400).json({
       error: "Invalid input: 'tourPackageIdArray' must be a non-empty array.",
@@ -641,7 +658,7 @@ exports.addToHomePageSection = async (req, res) => {
 };
 
 exports.removeHomePageSection = async (req, res) => {
-  const { tourPackageIdArray } = req.body;
+  const tourPackageIdArray = req.body;
 
   if (!Array.isArray(tourPackageIdArray) || tourPackageIdArray.length === 0) {
     return res.status(400).json({
