@@ -310,21 +310,21 @@ exports.getAllToursRelatedToPackage = async (req, res) => {
     // Extract package IDs from the relations
     const tourIds = packageWithTours.map((relation) => relation.TourId);
 
-    if (!packageWithTours || packageWithTours.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Tour package not found",
-      });
-    }
+    // if (!packageWithTours || packageWithTours.length === 0) {
+    //   return res.status(404).json({
+    //     success: false,
+    //     message: "Tour package not found",
+    //   });
+    // }
 
     const tours = await Tour.findAll({ where: { id: tourIds } });
 
-    if (!tours) {
-      return res.status(404).json({
-        success: false,
-        message: "Tour not found",
-      });
-    }
+    // if (!tours) {
+    //   return res.status(404).json({
+    //     success: false,
+    //     message: "Tour not found",
+    //   });
+    // }
 
     res.status(200).json({ success: true, tours, packageDetails });
   } catch (error) {
