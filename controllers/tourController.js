@@ -411,7 +411,7 @@ exports.getTourById = async (req, res) => {
 
   try {
     const tour = await Tour.findByPk(id, {
-      include: [{ model: SubImages }, { model: TourData }],
+      include: [{ model: SubImages }, { model: TourData },{model: TourPackage}],
     });
 
     const itneryTourData = await ItneryTour.findAll({
