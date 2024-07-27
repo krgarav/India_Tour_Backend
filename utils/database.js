@@ -2,13 +2,13 @@ const { Sequelize } = require("sequelize");
 
 const sequelize = new Sequelize(
   "triangleindia_tours",
-  "triangleindia_tours",
-  "CuE2JpGaYhM4",
+  "root",
+  "1234",
   {
     dialect: "mysql",
-    host: "triangleindiatours.com",
+    host: "localhost",
     port: 3306, // Ensure this is the correct port
-    logging: false,
+    // logging: false,
   }
 );
 
