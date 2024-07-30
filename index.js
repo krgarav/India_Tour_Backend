@@ -44,9 +44,9 @@ app.use(require("./routes/tourPackageRoutes"));
 app.use("/images", express.static(path.join(__dirname, "/uploads/images/")));
 app.use("/sliderImg", express.static(path.join(__dirname, "/uploads/sliderImage/")));
 // Handle all other routes and serve React's index.html
-// app.get('*', (req, res) => {
-//   res.sendFile(path.join(builtPath, 'index.html'));
-// });
+app.get('*', (req, res) => {
+  res.sendFile(path.join(builtPath, 'index.html'));
+});
 
 // Table Relations
 Tour.hasMany(SubImages, {
@@ -97,16 +97,15 @@ sequelize
     }
 
     // Read SSL certificate and key files
-    // const options = {
-    //   key: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/privkey.pem"), // Replace with your private key file path
-    //   cert: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/fullchain.pem") // Replace with your fullchain.pem file path
-    // };
+    const options = {
+      key: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/privkey.pem"), // Replace with your private key file path
+      cert: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/fullchain.pem") // Replace with your fullchain.pem file path
+    };
 
-    // https.createServer(options, app).listen(PORT, () => {
-    //   console.log(`HTTPS Server is running on port ${PORT}`);
-    // });
+    https.createServer(options, app).listen(PORT, () => {
+      console.log(`HTTPS Server is running on port ${PORT}`);
+    });
 
-    app.listen(5000)
   })
   .catch((err) => {
     console.error("Unable to connect to the database:", err);
