@@ -42,10 +42,11 @@ app.use(require("./routes/tourPackageRoutes"));
 
 // Serve static files from the 'extractedFiles' directory
 app.use("/images", express.static(path.join(__dirname, "/uploads/images/")));
+app.use("/sliderImg", express.static(path.join(__dirname, "/uploads/sliderImage/")));
 // Handle all other routes and serve React's index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.join(builtPath, 'index.html'));
-});
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(builtPath, 'index.html'));
+// });
 
 // Table Relations
 Tour.hasMany(SubImages, {
@@ -105,7 +106,7 @@ sequelize
     //   console.log(`HTTPS Server is running on port ${PORT}`);
     // });
 
-    app.listen(2000)
+    app.listen(5000)
   })
   .catch((err) => {
     console.error("Unable to connect to the database:", err);

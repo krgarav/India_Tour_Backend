@@ -12,9 +12,9 @@ exports.addSliderData = async (req, res, next) => {
   }
   const imgBuffer = req.file.buffer; // Get the buffer of the uploaded file
   const appendedFileName = `${Date.now()}-${req.file.originalname}`; //created current time and original name mixed title
-  const imgPath = `sliderImage/${appendedFileName}`; // Define the path where the image will be saved
-  if (!fs.existsSync("sliderImage")) {
-    fs.mkdirSync("sliderImage");
+  const imgPath = `uploads/sliderImage/${appendedFileName}`; // Define the path where the image will be saved
+  if (!fs.existsSync("upload/sliderImage")) {
+    fs.mkdirSync("uploads/sliderImage", { recursive: true });
   }
   // Save the buffer to the filesystem
   fs.writeFile(imgPath, imgBuffer, async (err) => {
@@ -56,13 +56,13 @@ exports.deleteSliderData = async (req, res, next) => {
 
   try {
     // Find the document by ID
-    const sliderData = await homeSliderSchema.findOne({ id });
+    const sliderData = await homeSliderSchema.findOne({ where: { id: id } });
 
     if (!sliderData) {
       return res.status(404).json({ msg: "Slider data not found" });
     }
 
-    const imgPath = `sliderImage/${sliderData.imgPath}`;
+    const imgPath = `uploads/sliderImage/${sliderData.imgPath}`;
 
     // Delete the document from the database
     await sliderData.destroy();
@@ -100,15 +100,16 @@ exports.editSliderData = async (req, res, next) => {
       );
   }
 
+  
   try {
     // Find the document by ID
-    const sliderData = await homeSliderSchema.findOne({id});
-console.log(sliderData);
+    const sliderData = await homeSliderSchema.findOne({ where: { id: id } });
+    console.log(sliderData);
     if (!sliderData) {
       return res.status(404).json({ msg: "Slider data not found" });
     }
 
-    const oldImgPath = `sliderImage/${sliderData.imgPath}`;
+    const oldImgPath = `uploads/sliderImage/${sliderData.imgPath}`;
 
     // Delete the old image file from the filesystem
     fs.unlink(oldImgPath, (unlinkErr) => {
@@ -122,8 +123,8 @@ console.log(sliderData);
     const appendedFileName = `${Date.now()}-${req.file.originalname}`;
     const newImgPath = `sliderImage/${appendedFileName}`;
 
-    if (!fs.existsSync("sliderImage")) {
-      fs.mkdirSync("sliderImage");
+    if (!fs.existsSync("uploads/sliderImage")) {
+      fs.mkdirSync("uploads/sliderImage", { recursive: true });
     }
 
     fs.writeFile(newImgPath, imgBuffer, async (err) => {
@@ -154,9 +155,11 @@ console.log(sliderData);
 exports.getAllSliderData = async (req, res, next) => {
   try {
     const sliderData = await homeSliderSchema.findAll();
-    return res.status(200).json({data:sliderData});
+    return res.status(200).json({ data: sliderData });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ msg: "Something went wrong in server", err: error });
+    return res
+      .status(500)
+      .json({ msg: "Something went wrong in server", err: error });
   }
 };
