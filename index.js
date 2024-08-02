@@ -44,9 +44,9 @@ app.use(require("./routes/tourPackageRoutes"));
 app.use("/images", express.static(path.join(__dirname, "/uploads/images/")));
 app.use("/sliderImg", express.static(path.join(__dirname, "/uploads/sliderImage/")));
 // Handle all other routes and serve React's index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.join(builtPath, 'index.html'));
-});
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(builtPath, 'index.html'));
+// });
 
 // Table Relations
 Tour.hasMany(SubImages, {

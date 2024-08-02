@@ -191,19 +191,12 @@ exports.editTourPackage = async (req, res) => {
     }
 
     const tourPackageId = req.params.id;
-    const { tourPackageTitle } = req.body;
-    const tourPackageBgImageName =
-      req.files?.TourBGImage?.[0]?.filename || null;
+    const { tourPackageTitle, toursIncluded } = req.body;
+    const tourPackageBgImageName = req.files?.TourBGImage?.[0]?.filename || null;
 
     let newImagePath;
     if (tourPackageBgImageName !== null) {
-      newImagePath = path.join(
-        __dirname,
-        "..",
-        "uploads",
-        "images",
-        tourPackageBgImageName
-      );
+      newImagePath = path.join(__dirname, "..", "uploads", "images", tourPackageBgImageName);
     }
 
     let transaction;
@@ -211,9 +204,7 @@ exports.editTourPackage = async (req, res) => {
     try {
       transaction = await sequelize.transaction();
 
-      const tourPackage = await TourPackage.findByPk(tourPackageId, {
-        transaction,
-      });
+      const tourPackage = await TourPackage.findByPk(tourPackageId, { transaction });
       if (!tourPackage) {
         await transaction.rollback();
         if (newImagePath && fs.existsSync(newImagePath)) {
@@ -227,20 +218,11 @@ exports.editTourPackage = async (req, res) => {
 
       if (tourPackageBgImageName) {
         const previousBGImageName = tourPackage.backgroundImage;
-
         if (previousBGImageName) {
-          // Delete associated image from server (if any)
-          const prevImagePath = path.join(
-            __dirname,
-            "..",
-            "uploads",
-            "images",
-            previousBGImageName
-          );
-
+          const prevImagePath = path.join(__dirname, "..", "uploads", "images", previousBGImageName);
           try {
             if (fs.existsSync(prevImagePath)) {
-              fs.unlinkSync(prevImagePath); // Delete previous tour package image file from server
+              fs.unlinkSync(prevImagePath);
             }
           } catch (fsError) {
             console.error("Error deleting previous background image:", fsError);
@@ -249,10 +231,38 @@ exports.editTourPackage = async (req, res) => {
       }
 
       tourPackage.packageTitle = tourPackageTitle || tourPackage.packageTitle;
-      tourPackage.backgroundImage =
-        tourPackageBgImageName || tourPackage.backgroundImage;
-
+      tourPackage.backgroundImage = tourPackageBgImageName || tourPackage.backgroundImage;
       await tourPackage.save({ transaction });
+
+      if (toursIncluded) {
+        const toursArray = typeof toursIncluded === "string" ? JSON.parse(toursIncluded) : toursIncluded;
+
+        if (!Array.isArray(toursArray)) {
+          await transaction.rollback();
+          if (newImagePath && fs.existsSync(newImagePath)) {
+            fs.unlinkSync(newImagePath);
+          }
+          return res.status(400).json({
+            success: false,
+            message: "Invalid toursIncluded array.",
+          });
+        }
+
+        await TourTourPackageRelation.destroy({
+          where: { TourPackageId: tourPackageId },
+          transaction,
+        });
+
+        for (const tourId of toursArray) {
+          await TourTourPackageRelation.create(
+            {
+              TourPackageId: tourPackageId,
+              TourId: tourId,
+            },
+            { transaction }
+          );
+        }
+      }
 
       await transaction.commit();
 
@@ -264,7 +274,6 @@ exports.editTourPackage = async (req, res) => {
       if (transaction) await transaction.rollback();
       console.error("Error updating tour package:", error);
 
-      // Delete the newly uploaded image if any error occurs
       if (newImagePath && fs.existsSync(newImagePath)) {
         fs.unlinkSync(newImagePath);
       }
