@@ -7,6 +7,9 @@ const TourPackage = require("../models/tourPackageSchema");
 const upload = require("../middleware/imageUploads"); // Adjust the path to your upload middleware
 const fs = require("fs");
 const path = require("path");
+const Exclusion = require("../models/exclusionSchema");
+const Inclusion = require("../models/inclusionSchema");
+const Highlights = require("../models/highlightsSchema");
 
 const updateTourFields = async (req, tour) => {
   tour.tourTitle = req.body.title || tour.tourTitle;
@@ -285,6 +288,9 @@ exports.createTour = (req, res) => {
       fooding,
       others,
       itneryTourDetails,
+      highlightsDetails,
+      exclusionDetails,
+      inclusionDetails,
     } = req.body;
 
     const tourTitleImage = req.files?.TitleImage?.[0]?.filename || null;
@@ -377,6 +383,144 @@ exports.createTour = (req, res) => {
         }
       }
 
+      if (highlightsDetails) {
+        let parsedHighlightsDetails = JSON.parse(highlightsDetails);
+
+        if (
+          Array.isArray(parsedHighlightsDetails) &&
+          parsedHighlightsDetails.length > 0
+        ) {
+          // Iterate over each itinerary and perform the update
+          for (const highlightObj of parsedHighlightsDetails) {
+            const { sl: serialNo, highlight } = highlightObj;
+
+            try {
+              // Perform the update
+              await Highlights.create(
+                {
+                  serialNo: serialNo,
+                  highlight: highlight,
+                  tourId: newTour.id,
+                },
+                { transaction }
+              );
+            } catch (updateError) {
+              console.error(
+                `Error updating ItineraryTour entry with serialNo: ${serialNo}`,
+                updateError
+              );
+              res.status(500).json({
+                success: false,
+                message: `Error updating ItineraryTour entry with serialNo: ${serialNo}: ${updateError.message}`,
+              });
+              return;
+            }
+          }
+          console.log("ItineraryTour highlights updated successfully.");
+        } else {
+          console.error(
+            "Invalid or empty ItineraryTourDetails array for highlights."
+          );
+          res.status(500).json({
+            success: false,
+            message:
+              "Invalid or empty ItineraryTourDetails array for highlights.",
+          });
+        }
+      }
+
+      if (exclusionDetails) {
+        let parsedExclusionDetails = JSON.parse(exclusionDetails);
+
+        if (
+          Array.isArray(parsedExclusionDetails) &&
+          parsedExclusionDetails.length > 0
+        ) {
+          // Iterate over each itinerary and perform the update for both Highlights and Exclusion
+          for (const exclusionObj of parsedExclusionDetails) {
+            const { sl: serialNo, exclusion } = exclusionObj;
+
+            try {
+              // Perform the update for Exclusion
+              await Exclusion.create(
+                {
+                  serialNo: serialNo,
+                  exclusion: exclusion,
+                  tourId: newTour.id,
+                },
+                { transaction }
+              );
+            } catch (updateError) {
+              console.error(
+                `Error updating ItineraryTour entry with serialNo: ${serialNo}`,
+                updateError
+              );
+              res.status(500).json({
+                success: false,
+                message: `Error updating ItineraryTour entry with serialNo: ${serialNo}: ${updateError.message}`,
+              });
+              return;
+            }
+          }
+          console.log("ItineraryTour exclusions updated successfully.");
+        } else {
+          console.error(
+            "Invalid or empty ItineraryTourDetails array for exclusions."
+          );
+          res.status(500).json({
+            success: false,
+            message:
+              "Invalid or empty ItineraryTourDetails array for exclusions.",
+          });
+        }
+      }
+
+      if (inclusionDetails) {
+        let parsedInclusionDetails = JSON.parse(inclusionDetails);
+
+        if (
+          Array.isArray(parsedInclusionDetails) &&
+          parsedInclusionDetails.length > 0
+        ) {
+          // Iterate over each itinerary and perform the update
+          for (const inclusionObj of parsedInclusionDetails) {
+            const { sl: serialNo, inclusion } = inclusionObj;
+
+            try {
+              // Perform the update for Inclusion
+              await Inclusion.create(
+                {
+                  serialNo: serialNo,
+                  inclusion: inclusion,
+                  tourId: newTour.id,
+                },
+                { transaction }
+              );
+            } catch (updateError) {
+              console.error(
+                `Error updating ItineraryTour entry with serialNo: ${serialNo}`,
+                updateError
+              );
+              res.status(500).json({
+                success: false,
+                message: `Error updating ItineraryTour entry with serialNo: ${serialNo}: ${updateError.message}`,
+              });
+              return;
+            }
+          }
+          console.log("ItineraryTour inclusions updated successfully.");
+        } else {
+          console.error(
+            "Invalid or empty ItineraryTourDetails array for inclusions."
+          );
+          res.status(500).json({
+            success: false,
+            message:
+              "Invalid or empty ItineraryTourDetails array for inclusions.",
+          });
+        }
+      }
+
       // Commit the transaction
       await transaction.commit();
 
@@ -411,7 +555,14 @@ exports.getTourById = async (req, res) => {
 
   try {
     const tour = await Tour.findByPk(id, {
-      include: [{ model: SubImages }, { model: TourData },{model: TourPackage}],
+      include: [
+        { model: SubImages },
+        { model: TourData },
+        { model: TourPackage },
+        { model: Highlights },
+        { model: Exclusion },
+        { model: Inclusion },
+      ],
     });
 
     const itneryTourData = await ItneryTour.findAll({
@@ -537,7 +688,6 @@ exports.getAllTopTours = async (req, res) => {
 
 //FETCH HOMEPAGE SECTION
 exports.fetchHomePageSection = async (req, res) => {
-
   try {
     const tourPackage = await TourPackage.findAll({
       where: { homePageSection: true },
@@ -551,17 +701,16 @@ exports.fetchHomePageSection = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Tour packages found.",
-      tourPackage
+      tourPackage,
     });
   } catch (error) {
     console.error("Error fetching tour packages:", error);
     res.status(500).json({
       success: false,
       message: "Server error. Please try again later.",
-      error
+      error,
     });
   }
-
 
   //   const tourPackages = await Promise.all(
   //     tourPackageIdArray.map(async (tourPackageId) => {
@@ -616,7 +765,7 @@ exports.fetchHomePageSection = async (req, res) => {
 //ADD TOURSPACKAGE TO HOMEPAGE SECTION
 exports.addToHomePageSection = async (req, res) => {
   const tourPackageIdArray = req.body;
-  console.log(req.body)
+  console.log(req.body);
   if (!Array.isArray(tourPackageIdArray) || tourPackageIdArray.length === 0) {
     return res.status(400).json({
       error: "Invalid input: 'tourPackageIdArray' must be a non-empty array.",
@@ -657,6 +806,7 @@ exports.addToHomePageSection = async (req, res) => {
   }
 };
 
+//REMOVE TOURSPACKAGE TO HOMEPAGE SECTION
 exports.removeHomePageSection = async (req, res) => {
   const tourPackageIdArray = req.body;
 

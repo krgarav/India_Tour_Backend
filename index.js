@@ -20,6 +20,9 @@ const cors = require("cors");
 const TourTourPackageRelation = require("./models/tour-tourPackageRelation");
 const TourPackage = require("./models/tourPackageSchema");
 const homeSliderSchema = require("./models/HomeSliderSchema");
+const Highlights = require("./models/highlightsSchema");
+const Inclusion = require("./models/inclusionSchema");
+const Exclusion = require("./models/exclusionSchema");
 
 const builtPath = path.join(__dirname, "dist");
 const app = express();
@@ -42,10 +45,13 @@ app.use(require("./routes/tourPackageRoutes"));
 
 // Serve static files from the 'extractedFiles' directory
 app.use("/images", express.static(path.join(__dirname, "/uploads/images/")));
-app.use("/sliderImg", express.static(path.join(__dirname, "/uploads/sliderImage/")));
+app.use(
+  "/sliderImg",
+  express.static(path.join(__dirname, "/uploads/sliderImage/"))
+);
 // Handle all other routes and serve React's index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.join(builtPath, 'index.html'));
+app.get("*", (req, res) => {
+  res.sendFile(path.join(builtPath, "index.html"));
 });
 
 // Table Relations
@@ -84,8 +90,41 @@ Tour.belongsToMany(TourPackage, {
   through: TourTourPackageRelation,
 });
 
+Tour.hasMany(Highlights, {
+  foreignKey: "tourId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+Highlights.belongsTo(Tour, {
+  foreignKey: "tourId",
+  onUpdate: "CASCADE",
+});
+
+Tour.hasMany(Inclusion, {
+  foreignKey: "tourId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+Inclusion.belongsTo(Tour, {
+  foreignKey: "tourId",
+  onUpdate: "CASCADE",
+});
+
+Tour.hasMany(Exclusion, {
+  foreignKey: "tourId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+Exclusion.belongsTo(Tour, {
+  foreignKey: "tourId",
+  onUpdate: "CASCADE",
+});
+
 sequelize
-  .sync({ force: false })
+  .sync({ force: !true })
   .then(async () => {
     const users = await User.findAll();
     if (users.length === 0) {
@@ -97,15 +136,18 @@ sequelize
     }
 
     // Read SSL certificate and key files
-    const options = {
-      key: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/privkey.pem"), // Replace with your private key file path
-      cert: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/fullchain.pem") // Replace with your fullchain.pem file path
-    };
+    // const options = {
+    //   key: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/privkey.pem"), // Replace with your private key file path
+    //   cert: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/fullchain.pem") // Replace with your fullchain.pem file path
+    // };
 
-    https.createServer(options, app).listen(PORT, () => {
+    // https.createServer(options, app).listen(PORT, () => {
+    //   console.log(`HTTPS Server is running on port ${PORT}`);
+    // });
+
+    http.createServer(app).listen(PORT, () => {
       console.log(`HTTPS Server is running on port ${PORT}`);
     });
-
   })
   .catch((err) => {
     console.error("Unable to connect to the database:", err);
