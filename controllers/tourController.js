@@ -148,6 +148,48 @@ const handleSubImagesUpload = async (
   }
 };
 
+// const handleHighlightDetails = async (req, highlightDetails, transaction) => {
+//   if (req.body.highlightDetails) {
+//     let parsedHighlightsDetails = JSON.parse(req.body.highlightDetails);
+
+//         if (
+//           Array.isArray(parsedHighlightsDetails) &&
+//           parsedHighlightsDetails.length > 0
+//         ) {
+//           // Iterate over each itinerary and perform the update
+//           for (const highlightObj of parsedHighlightsDetails) {
+//             const { sl: serialNo, highlight } = highlightObj;
+
+//             try {
+//               // Perform the update
+//               await Highlights.update(
+//                 {
+//                   serialNo: serialNo,
+//                   highlight: highlight,
+//                   tourId: newTour.id,
+//                 },
+//                 { transaction }
+//               );
+//             } catch (updateError) {
+//               console.error(
+//                 `Error updating ItineraryTour entry with serialNo: ${serialNo}`,
+//                 updateError
+//               );
+//               res.status(500).json({
+//                 success: false,
+//                 message: `Error updating ItineraryTour entry with serialNo: ${serialNo}: ${updateError.message}`,
+//               });
+//               return;
+//             }
+//           }
+//           console.log("ItineraryTour highlights updated successfully.");
+//         } else {
+//           console.error(
+//             "Invalid or empty ItineraryTourDetails array for highlights."
+//           );
+//   }
+// };
+
 const deleteUploadedFiles = (files) => {
   for (const file of files) {
     const filePath = path.join(__dirname, "..", "uploads", "images", file);
@@ -165,11 +207,32 @@ exports.editTour = async (req, res) => {
   try {
     transaction = await sequelize.transaction();
     let tour = await Tour.findByPk(tourId, {
-      include: [{ model: SubImages }, { model: TourData }],
+      include: [
+        { model: SubImages },
+        { model: TourData },
+        { model: Highlights },
+        { model: Exclusion },
+        { model: Inclusion },
+      ],
       transaction,
     });
 
     const itneryTourData = await ItneryTour.findAll({
+      where: { tourId: tourId },
+      transaction,
+    });
+
+    const highlightDetails = await Highlights.findAll({
+      where: { tourId: tourId },
+      transaction,
+    });
+
+    const exclusionDetails = await Exclusion.findAll({
+      where: { tourId: tourId },
+      transaction,
+    });
+
+    const inclusionDetails = await Inclusion.findAll({
       where: { tourId: tourId },
       transaction,
     });
@@ -185,6 +248,24 @@ exports.editTour = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "ItneryTourData not found",
+      });
+    } else if (!highlightDetails) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        message: "Highlight not found",
+      });
+    } else if (!exclusionDetails) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        message: "Exclusion not found",
+      });
+    } else if (!inclusionDetails) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        message: "Inclusion not found",
       });
     }
 
@@ -218,6 +299,15 @@ exports.editTour = async (req, res) => {
         );
         // Handle sub-images upload
         await handleSubImagesUpload(req, tour, previousSubImages, transaction);
+
+        // Handle highlightDetails
+        await handleHighlightDetails(req, highlightDetails, transaction);
+
+        // Handle exclusionDetails
+        await handleExclusionDetails(req, exclusionDetails, transaction);
+
+        // Handle exclusionDetails
+        await handleInclusionDetails(req, exclusionDetails, transaction);
 
         await tour.save({ transaction });
         if (tour.TourDatum) {
