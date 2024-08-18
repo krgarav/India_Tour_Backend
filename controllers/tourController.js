@@ -148,47 +148,170 @@ const handleSubImagesUpload = async (
   }
 };
 
-// const handleHighlightDetails = async (req, highlightDetails, transaction) => {
-//   if (req.body.highlightDetails) {
-//     let parsedHighlightsDetails = JSON.parse(req.body.highlightDetails);
+const handleHighlightDetails = async (req, tourId, transaction) => {
+  try {
+    // Check if highlightsDetails is present in the request body
+    if (req.body.highlightsDetails) {
+      let parsedHighlightsDetails;
 
-//         if (
-//           Array.isArray(parsedHighlightsDetails) &&
-//           parsedHighlightsDetails.length > 0
-//         ) {
-//           // Iterate over each itinerary and perform the update
-//           for (const highlightObj of parsedHighlightsDetails) {
-//             const { sl: serialNo, highlight } = highlightObj;
+      // Parse the highlightDetails safely
+      try {
+        parsedHighlightsDetails = JSON.parse(req.body.highlightsDetails);
+      } catch (error) {
+        console.error("Invalid JSON format in highlightDetails:", error);
+        throw new Error("Invalid JSON format in highlightDetails.");
+      }
 
-//             try {
-//               // Perform the update
-//               await Highlights.update(
-//                 {
-//                   serialNo: serialNo,
-//                   highlight: highlight,
-//                   tourId: newTour.id,
-//                 },
-//                 { transaction }
-//               );
-//             } catch (updateError) {
-//               console.error(
-//                 `Error updating ItineraryTour entry with serialNo: ${serialNo}`,
-//                 updateError
-//               );
-//               res.status(500).json({
-//                 success: false,
-//                 message: `Error updating ItineraryTour entry with serialNo: ${serialNo}: ${updateError.message}`,
-//               });
-//               return;
-//             }
-//           }
-//           console.log("ItineraryTour highlights updated successfully.");
-//         } else {
-//           console.error(
-//             "Invalid or empty ItineraryTourDetails array for highlights."
-//           );
-//   }
-// };
+      // Check if parsedHighlightsDetails is a valid array
+      if (
+        !Array.isArray(parsedHighlightsDetails) ||
+        parsedHighlightsDetails.length === 0
+      ) {
+        throw new Error("highlightDetails should be a non-empty array.");
+      }
+
+      // Delete all existing highlights for the given tourId
+      await Highlights.destroy({ where: { tourId }, transaction });
+
+      // Insert the new highlight details
+      for (let parsedHighlight of parsedHighlightsDetails) {
+        const { sl: serialNo, highlight } = parsedHighlight;
+
+        // Basic validation on serialNo and highlight
+        if (!serialNo || !highlight) {
+          throw new Error("Each highlight must have a serialNo and highlight.");
+        }
+
+        // Create a new highlight
+        await Highlights.create(
+          {
+            serialNo: serialNo,
+            highlight: highlight,
+            tourId: tourId,
+          },
+          { transaction } // Ensure it's part of the parent transaction
+        );
+      }
+
+      console.log("Highlight details updated successfully.");
+    } else {
+      throw new Error("highlightDetails is required in the request body.");
+    }
+  } catch (error) {
+    console.error("Error handling highlight details:", error);
+    throw error; // Propagate the error to the parent function for handling
+  }
+};
+
+const handleExclusionDetails = async (req, tourId, transaction) => {
+  try {
+    // Check if highlightsDetails is present in the request body
+    if (req.body.exclusionDetails) {
+      let parsedExclusionDetails;
+
+      // Parse the highlightDetails safely
+      try {
+        parsedExclusionDetails = JSON.parse(req.body.exclusionDetails);
+      } catch (error) {
+        console.error("Invalid JSON format in highlightDetails:", error);
+        throw new Error("Invalid JSON format in highlightDetails.");
+      }
+
+      // Check if parsedHighlightsDetails is a valid array
+      if (
+        !Array.isArray(parsedExclusionDetails) ||
+        parsedExclusionDetails.length === 0
+      ) {
+        throw new Error("highlightDetails should be a non-empty array.");
+      }
+
+      // Delete all existing highlights for the given tourId
+      await Exclusion.destroy({ where: { tourId }, transaction });
+
+      // Insert the new highlight details
+      for (let parsedExclusion of parsedExclusionDetails) {
+        const { sl: serialNo, exclusion } = parsedExclusion;
+
+        // Basic validation on serialNo and highlight
+        if (!serialNo || !exclusion) {
+          throw new Error("Each highlight must have a serialNo and highlight.");
+        }
+
+        // Create a new highlight
+        await Exclusion.create(
+          {
+            serialNo: serialNo,
+            exclusion: exclusion,
+            tourId: tourId,
+          },
+          { transaction } // Ensure it's part of the parent transaction
+        );
+      }
+
+      console.log("Highlight details updated successfully.");
+    } else {
+      throw new Error("highlightDetails is required in the request body.");
+    }
+  } catch (error) {
+    console.error("Error handling highlight details:", error);
+    throw error; // Propagate the error to the parent function for handling
+  }
+};
+
+const handleInclusionDetails = async (req, tourId, transaction) => {
+  try {
+    // Check if highlightsDetails is present in the request body
+    if (req.body.inclusionDetails) {
+      let parsedInclusionDetails;
+
+      // Parse the highlightDetails safely
+      try {
+        parsedInclusionDetails = JSON.parse(req.body.inclusionDetails);
+      } catch (error) {
+        console.error("Invalid JSON format in highlightDetails:", error);
+        throw new Error("Invalid JSON format in highlightDetails.");
+      }
+
+      // Check if parsedHighlightsDetails is a valid array
+      if (
+        !Array.isArray(parsedInclusionDetails) ||
+        parsedInclusionDetails.length === 0
+      ) {
+        throw new Error("highlightDetails should be a non-empty array.");
+      }
+
+      // Delete all existing highlights for the given tourId
+      await Inclusion.destroy({ where: { tourId }, transaction });
+
+      // Insert the new highlight details
+      for (let parsedInclusion of parsedInclusionDetails) {
+        const { sl: serialNo, inclusion } = parsedInclusion;
+
+        // Basic validation on serialNo and highlight
+        if (!serialNo || !inclusion) {
+          throw new Error("Each highlight must have a serialNo and highlight.");
+        }
+
+        // Create a new highlight
+        await Inclusion.create(
+          {
+            serialNo: serialNo,
+            inclusion: inclusion,
+            tourId: tourId,
+          },
+          { transaction } // Ensure it's part of the parent transaction
+        );
+      }
+
+      console.log("Highlight details updated successfully.");
+    } else {
+      throw new Error("highlightDetails is required in the request body.");
+    }
+  } catch (error) {
+    console.error("Error handling highlight details:", error);
+    throw error; // Propagate the error to the parent function for handling
+  }
+};
 
 const deleteUploadedFiles = (files) => {
   for (const file of files) {
@@ -301,13 +424,13 @@ exports.editTour = async (req, res) => {
         await handleSubImagesUpload(req, tour, previousSubImages, transaction);
 
         // Handle highlightDetails
-        await handleHighlightDetails(req, highlightDetails, transaction);
+        await handleHighlightDetails(req, tourId, transaction);
 
         // Handle exclusionDetails
-        await handleExclusionDetails(req, exclusionDetails, transaction);
+        await handleExclusionDetails(req, tourId, transaction);
 
-        // Handle exclusionDetails
-        await handleInclusionDetails(req, exclusionDetails, transaction);
+        // // Handle exclusionDetails
+        await handleInclusionDetails(req, tourId, transaction);
 
         await tour.save({ transaction });
         if (tour.TourDatum) {
