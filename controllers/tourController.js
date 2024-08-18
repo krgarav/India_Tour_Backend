@@ -148,6 +148,171 @@ const handleSubImagesUpload = async (
   }
 };
 
+const handleHighlightDetails = async (req, tourId, transaction) => {
+  try {
+    // Check if highlightsDetails is present in the request body
+    if (req.body.highlightsDetails) {
+      let parsedHighlightsDetails;
+
+      // Parse the highlightDetails safely
+      try {
+        parsedHighlightsDetails = JSON.parse(req.body.highlightsDetails);
+      } catch (error) {
+        console.error("Invalid JSON format in highlightDetails:", error);
+        throw new Error("Invalid JSON format in highlightDetails.");
+      }
+
+      // Check if parsedHighlightsDetails is a valid array
+      if (
+        !Array.isArray(parsedHighlightsDetails) ||
+        parsedHighlightsDetails.length === 0
+      ) {
+        throw new Error("highlightDetails should be a non-empty array.");
+      }
+
+      // Delete all existing highlights for the given tourId
+      await Highlights.destroy({ where: { tourId }, transaction });
+
+      // Insert the new highlight details
+      for (let parsedHighlight of parsedHighlightsDetails) {
+        const { sl: serialNo, highlight } = parsedHighlight;
+
+        // Basic validation on serialNo and highlight
+        if (!serialNo || !highlight) {
+          throw new Error("Each highlight must have a serialNo and highlight.");
+        }
+
+        // Create a new highlight
+        await Highlights.create(
+          {
+            serialNo: serialNo,
+            highlight: highlight,
+            tourId: tourId,
+          },
+          { transaction } // Ensure it's part of the parent transaction
+        );
+      }
+
+      console.log("Highlight details updated successfully.");
+    } else {
+      throw new Error("highlightDetails is required in the request body.");
+    }
+  } catch (error) {
+    console.error("Error handling highlight details:", error);
+    throw error; // Propagate the error to the parent function for handling
+  }
+};
+
+const handleExclusionDetails = async (req, tourId, transaction) => {
+  try {
+    // Check if highlightsDetails is present in the request body
+    if (req.body.exclusionDetails) {
+      let parsedExclusionDetails;
+
+      // Parse the highlightDetails safely
+      try {
+        parsedExclusionDetails = JSON.parse(req.body.exclusionDetails);
+      } catch (error) {
+        console.error("Invalid JSON format in highlightDetails:", error);
+        throw new Error("Invalid JSON format in highlightDetails.");
+      }
+
+      // Check if parsedHighlightsDetails is a valid array
+      if (
+        !Array.isArray(parsedExclusionDetails) ||
+        parsedExclusionDetails.length === 0
+      ) {
+        throw new Error("highlightDetails should be a non-empty array.");
+      }
+
+      // Delete all existing highlights for the given tourId
+      await Exclusion.destroy({ where: { tourId }, transaction });
+
+      // Insert the new highlight details
+      for (let parsedExclusion of parsedExclusionDetails) {
+        const { sl: serialNo, exclusion } = parsedExclusion;
+
+        // Basic validation on serialNo and highlight
+        if (!serialNo || !exclusion) {
+          throw new Error("Each highlight must have a serialNo and highlight.");
+        }
+
+        // Create a new highlight
+        await Exclusion.create(
+          {
+            serialNo: serialNo,
+            exclusion: exclusion,
+            tourId: tourId,
+          },
+          { transaction } // Ensure it's part of the parent transaction
+        );
+      }
+
+      console.log("Highlight details updated successfully.");
+    } else {
+      throw new Error("highlightDetails is required in the request body.");
+    }
+  } catch (error) {
+    console.error("Error handling highlight details:", error);
+    throw error; // Propagate the error to the parent function for handling
+  }
+};
+
+const handleInclusionDetails = async (req, tourId, transaction) => {
+  try {
+    // Check if highlightsDetails is present in the request body
+    if (req.body.inclusionDetails) {
+      let parsedInclusionDetails;
+
+      // Parse the highlightDetails safely
+      try {
+        parsedInclusionDetails = JSON.parse(req.body.inclusionDetails);
+      } catch (error) {
+        console.error("Invalid JSON format in highlightDetails:", error);
+        throw new Error("Invalid JSON format in highlightDetails.");
+      }
+
+      // Check if parsedHighlightsDetails is a valid array
+      if (
+        !Array.isArray(parsedInclusionDetails) ||
+        parsedInclusionDetails.length === 0
+      ) {
+        throw new Error("highlightDetails should be a non-empty array.");
+      }
+
+      // Delete all existing highlights for the given tourId
+      await Inclusion.destroy({ where: { tourId }, transaction });
+
+      // Insert the new highlight details
+      for (let parsedInclusion of parsedInclusionDetails) {
+        const { sl: serialNo, inclusion } = parsedInclusion;
+
+        // Basic validation on serialNo and highlight
+        if (!serialNo || !inclusion) {
+          throw new Error("Each highlight must have a serialNo and highlight.");
+        }
+
+        // Create a new highlight
+        await Inclusion.create(
+          {
+            serialNo: serialNo,
+            inclusion: inclusion,
+            tourId: tourId,
+          },
+          { transaction } // Ensure it's part of the parent transaction
+        );
+      }
+
+      console.log("Highlight details updated successfully.");
+    } else {
+      throw new Error("highlightDetails is required in the request body.");
+    }
+  } catch (error) {
+    console.error("Error handling highlight details:", error);
+    throw error; // Propagate the error to the parent function for handling
+  }
+};
+
 const deleteUploadedFiles = (files) => {
   for (const file of files) {
     const filePath = path.join(__dirname, "..", "uploads", "images", file);
@@ -165,11 +330,32 @@ exports.editTour = async (req, res) => {
   try {
     transaction = await sequelize.transaction();
     let tour = await Tour.findByPk(tourId, {
-      include: [{ model: SubImages }, { model: TourData }],
+      include: [
+        { model: SubImages },
+        { model: TourData },
+        { model: Highlights },
+        { model: Exclusion },
+        { model: Inclusion },
+      ],
       transaction,
     });
 
     const itneryTourData = await ItneryTour.findAll({
+      where: { tourId: tourId },
+      transaction,
+    });
+
+    const highlightDetails = await Highlights.findAll({
+      where: { tourId: tourId },
+      transaction,
+    });
+
+    const exclusionDetails = await Exclusion.findAll({
+      where: { tourId: tourId },
+      transaction,
+    });
+
+    const inclusionDetails = await Inclusion.findAll({
       where: { tourId: tourId },
       transaction,
     });
@@ -185,6 +371,24 @@ exports.editTour = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "ItneryTourData not found",
+      });
+    } else if (!highlightDetails) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        message: "Highlight not found",
+      });
+    } else if (!exclusionDetails) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        message: "Exclusion not found",
+      });
+    } else if (!inclusionDetails) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        message: "Inclusion not found",
       });
     }
 
@@ -218,6 +422,15 @@ exports.editTour = async (req, res) => {
         );
         // Handle sub-images upload
         await handleSubImagesUpload(req, tour, previousSubImages, transaction);
+
+        // Handle highlightDetails
+        await handleHighlightDetails(req, tourId, transaction);
+
+        // Handle exclusionDetails
+        await handleExclusionDetails(req, tourId, transaction);
+
+        // // Handle exclusionDetails
+        await handleInclusionDetails(req, tourId, transaction);
 
         await tour.save({ transaction });
         if (tour.TourDatum) {
