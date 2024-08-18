@@ -136,18 +136,18 @@ sequelize
     }
 
     // Read SSL certificate and key files
-    // const options = {
-    //   key: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/privkey.pem"), // Replace with your private key file path
-    //   cert: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/fullchain.pem") // Replace with your fullchain.pem file path
-    // };
+    const options = {
+      key: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/privkey.pem"), // Replace with your private key file path
+      cert: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/fullchain.pem") // Replace with your fullchain.pem file path
+    };
 
-    // https.createServer(options, app).listen(PORT, () => {
-    //   console.log(`HTTPS Server is running on port ${PORT}`);
-    // });
-
-    http.createServer(app).listen(PORT, () => {
+    https.createServer(options, app).listen(PORT, () => {
       console.log(`HTTPS Server is running on port ${PORT}`);
     });
+
+    // http.createServer(app).listen(PORT, () => {
+    //   console.log(`HTTPS Server is running on port ${PORT}`);
+    // });
   })
   .catch((err) => {
     console.error("Unable to connect to the database:", err);
