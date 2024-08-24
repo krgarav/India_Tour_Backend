@@ -27,5 +27,6 @@ router.delete("/tour/delete/:id", deleteTour); //tourId
 router.post("/addSliderData",upload.single("sliderImg"),addSliderData)
 router.delete("/deleteSliderData/:id",deleteSliderData)
 router.put("/editSliderData",upload.single("sliderImg"),editSliderData)
-router.get("/getSliderData",getAllSliderData)
+router.get("/getSliderData",getAllSliderData);
+router.post("/", removeHomePageSection);
 module.exports = router;

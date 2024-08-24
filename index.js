@@ -23,6 +23,7 @@ const homeSliderSchema = require("./models/HomeSliderSchema");
 const Highlights = require("./models/highlightsSchema");
 const Inclusion = require("./models/inclusionSchema");
 const Exclusion = require("./models/exclusionSchema");
+const Pages = require("./models/pagesSchema");
 
 const builtPath = path.join(__dirname, "dist");
 const app = express();
@@ -42,6 +43,8 @@ app.use(express.static(builtPath));
 app.use(require("./routes/authRoutes"));
 app.use(require("./routes/tourRoutes"));
 app.use(require("./routes/tourPackageRoutes"));
+app.use(require("./routes/metaRoute"));
+
 
 // Serve static files from the 'extractedFiles' directory
 app.use("/images", express.static(path.join(__dirname, "/uploads/images/")));
@@ -134,20 +137,28 @@ sequelize
         password: hashPassword,
       });
     }
-
-    // Read SSL certificate and key files
-    const options = {
-      key: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/privkey.pem"), // Replace with your private key file path
-      cert: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/fullchain.pem") // Replace with your fullchain.pem file path
-    };
-
-    https.createServer(options, app).listen(PORT, () => {
-      console.log(`HTTPS Server is running on port ${PORT}`);
+    await Pages.findOrCreate({
+      where: { page: "Homepage" },
+      defaults: { page: "Homepage" },
     });
 
-    // http.createServer(app).listen(PORT, () => {
+    await Pages.findOrCreate({
+      where: { page: "Contact page" },
+      defaults: { page: "Contact page" },
+    });
+    // Read SSL certificate and key files
+    // const options = {
+    //   key: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/privkey.pem"), // Replace with your private key file path
+    //   cert: fs.readFileSync("/etc/letsencrypt/live/triangleindiatour.uk.to/fullchain.pem") // Replace with your fullchain.pem file path
+    // };
+
+    // https.createServer(options, app).listen(PORT, () => {
     //   console.log(`HTTPS Server is running on port ${PORT}`);
     // });
+
+    http.createServer(app).listen(PORT, () => {
+      console.log(`HTTPS Server is running on port ${PORT}`);
+    });
   })
   .catch((err) => {
     console.error("Unable to connect to the database:", err);

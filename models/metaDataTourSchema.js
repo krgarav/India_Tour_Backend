@@ -33,4 +33,5 @@ TourData.belongsTo(Tour, {
   onUpdate: "CASCADE",
 });
 
+
 module.exports = TourData;
